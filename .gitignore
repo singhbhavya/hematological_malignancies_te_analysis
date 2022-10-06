@@ -1,0 +1,7 @@
+.Rhistory
+.Rproj.user/
+.RData
+literature/
+r_outputs/
+results
+plots/
