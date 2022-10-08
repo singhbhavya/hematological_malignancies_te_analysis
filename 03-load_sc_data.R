@@ -23,6 +23,8 @@ library(edgeR)
 library(Seurat)
 library(SeuratObject)
 library(rtracklayer)
+library(Azimuth)
+library(patchwork)
 
 ################################### METADATA ###################################
 
@@ -98,6 +100,14 @@ GCB.merged.norm <- merge(SAMN14979762.seurat.qc,
 
 GCB.merged.norm <- Seurat::NormalizeData(GCB.merged.norm)
 
+############################# ADD FEATURE METADATA #############################
+
+GCB.norm.merged[['RNA']] <- Seurat::AddMetaData(GCB.norm.merged[['RNA']], 
+                                                SAMN13191512.seurat.qc[['RNA']]@meta.features)
+
+
+GCB.merged.norm[['RNA']] <- Seurat::AddMetaData(GCB.merged.norm[['RNA']], 
+                                                SAMN13191512.seurat.qc[['RNA']]@meta.features)
 
 ################################## SAVE DATA ###################################
 
