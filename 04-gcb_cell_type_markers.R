@@ -202,33 +202,41 @@ saveRDS(l2.markers, file = 'r_outputs/04-GCB.norm.merged.l2.markers.rds')
 umap1_lim <- range(GCB.norm.merged[['umap.proj']]@cell.embeddings[,1])
 umap2_lim <- range(GCB.norm.merged[['umap.proj']]@cell.embeddings[,2])
 
-pdf('plots/04-GCB.norm.merged.mapped.l1.pdf', width=12, height=12)
+pdf('plots/04-GCB.norm.merged.mapped.l1.pdf', width=10, height=10)
 nclust <- length(unique(GCB.norm.merged@meta.data$predicted.celltype.l1))
 p <- DimPlot(GCB.norm.merged,
+             repel=TRUE,
              group.by = "predicted.celltype.l1",
              label = TRUE,
-             cols=Seurat::DiscretePalette(nclust, 'glasbey'),
-             raster = TRUE,
+             label.size = 9,
+             cols=Seurat::DiscretePalette(nclust, 'polychrome'),
+             raster = FALSE,
              raster.dpi = c(1200, 1200)
 )
-p + xlim(umap1_lim) + ylim(umap2_lim) + NoAxes() + NoLegend() + theme(plot.title=element_blank())
+p + xlim(umap1_lim) + ylim(umap2_lim) + NoLegend() + theme(plot.title=element_blank())
 dev.off()
 
-
-pdf('plots/GCB.norm.merged.mapped.l2.pdf', width=10, height=10)
 nclust <- length(unique(GCB.norm.merged@meta.data$predicted.celltype.l2))
-p <- DimPlot(GCB.norm.merged,
-             repel = TRUE,
-             max.overlaps=0,
-             label.size = 10,
-             group.by = "predicted.celltype.l2",
-             label = TRUE,
-             cols=c(Seurat::DiscretePalette(36, c('polychrome')),
-                    Seurat::DiscretePalette(32, c('glasbey'))),
-             raster = TRUE,
-             raster.dpi = c(1200, 1200)
-)
-p + xlim(umap1_lim) + ylim(umap2_lim) + NoAxes() + NoLegend() + theme(plot.title=element_blank())
+p_l2 <- DimPlot(GCB.norm.merged,
+        repel = TRUE,
+        label.size = 4,
+        pt.size = 1,
+        group.by = "predicted.celltype.l2",
+        label = TRUE,
+        label.box = FALSE,
+        cols=c(Seurat::DiscretePalette(32, c('glasbey')),
+               Seurat::DiscretePalette(36, c('polychrome'))),
+        raster = FALSE) 
+
+pdf('plots/04-GCB.norm.merged.mapped.l2_nolab.pdf', width=12, height=8)
+p_l2 + theme_cowplot() +
+  xlim(umap1_lim) + ylim(umap2_lim) + NoLegend() +  theme(plot.title=element_blank()) 
+dev.off()
+
+pdf('plots/04-GCB.norm.merged.mapped.l2_lab.pdf', width=15, height=8) 
+p_l2 + xlim(umap1_lim) + ylim(umap2_lim) + theme_cowplot() + 
+  theme(plot.title=element_blank()) +
+  guides(color = guide_legend(override.aes = list(size=5), ncol=2) ) 
 dev.off()
 
 ############################## L1 FEATURE PLOTS ################################
@@ -262,39 +270,56 @@ herv_markers_l2 <- l2.markers[l2.markers$te_class=='LTR',]
 nrow(herv_markers_l2) # There are 144 HERV markers.
 length(unique(herv_markers_l2$gene)) # There are 61 unique HERVs.
 
-
 ############################## L2 FEATURE PLOTS ################################
 
 fpcols <- c('#eeeeeeFF', viridis::viridis(6))
 
+## Plasmablast 
 PB_all <- herv_markers_l2[herv_markers_l2$cluster == 'PB', 'gene']
 lapply(PB_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
 b_x <- c('HML6-19q13.43b', 'ERV316A3-8q13.3a')
-pdf('plots/04-gcb_combined_herv_markers_PB.pdf', width=6, height=3)
+pdf('plots/04-gcb_combined_l2_herv_markers_PB.pdf', width=6, height=3)
 p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=2, raster=FALSE)
-p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8)) 
 dev.off()
 
-pdf('plots/04-gcb_combined_HARLEQUIN-1q32.1.pdf', width=3, height=3)
+## HARLEQUIN-1q32.1
+pdf('plots/04-gcb_combined_l2_HARLEQUIN-1q32.1.pdf', width=3, height=3)
 p <- FeaturePlot(GCB.norm.merged, "HARLEQUIN-1q32.1", cols=fpcols, raster=FALSE)
 p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
 dev.off()
 
+## PDC (Plasmacytoid dendritic cells)
 PDC_all <- herv_markers_l2[herv_markers_l2$cluster == 'PDC', 'gene']
 lapply(PDC_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
 b_x <- c("ERV316A3-2q22.2b", "ERVLE-4q24e", "HARLEQUIN-1q32.1", 
          "HARLEQUIN-10q23.1", "HML1-1q32.1", "HERVEA-5q22.2", "ERV316A3-8q13.3a" )
-pdf('plots/04-gcb_combined_herv_markers_PDC.pdf', width=9, height=9)
+pdf('plots/04-gcb_combined_l2_herv_markers_PDC.pdf', width=9, height=9)
 p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=3, raster=FALSE)
 p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
 dev.off()
 
+## All memory B cell clusters
 MB_all <- herv_markers_l2[herv_markers_l2$cluster  %like%  'MB', 'gene']
 lapply(MB_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
 b_x <- c("ERV316A3-2q22.2b", "ERVLE-4q24e", "ERV316A3-8q13.3a", 
          "HARLEQUIN-1q32.1", "HERVS71-19q13.12a", "MER101-12p13.31b")
-pdf('plots/04-gcb_combined_herv_markers_MB.pdf', width=9, height=6)
+pdf('plots/04-gcb_combined_l2_herv_markers_MB.pdf', width=9, height=6)
 p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=3, raster=FALSE)
 p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
 dev.off()
+
+## HARLEQUIN-17q25
+pdf('plots/04-gcb_combined_l2_HARLEQUIN-17q25.pdf', width=3, height=3)
+p <- FeaturePlot(GCB.norm.merged, c("HARLEQUIN-17q25.3a", "HARLEQUIN-17q25.3b"), 
+                 cols=fpcols, ncol=2, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & theme(plot.title=element_text(size=8))
+dev.off()
+
+################################# SAVE FILES ###################################
+
+save(GCB.norm.merged, mapped, results,
+     l1.markers, l2.markers, 
+     herv_markers_l1, herv_markers_l2, GCB_metadata,
+     file="r_outputs/04-gcb.norm.merged.azimuth.Rdata")
 
