@@ -8,7 +8,7 @@
 ## DLBCL individual DESEQ2 and PCA
 ## FL individual DESEQ2 and PCA
 ## BL individual DESEQ2 and PCA
-## All together DESEQ2 and PCA
+## All together DESEQ2 and PCA (Maybe not?)
 
 #################################### SETUP #####################################
 
@@ -539,3 +539,156 @@ biplot(FL.g.pca.obj,
   theme_cowplot()
 
 ggsave("plots/05b-FL_hervsgenes_biplot_pc1_pc2_who.pdf", height = 6, width = 8)
+
+
+########################## ALL TOGETHER DESEQ HERVs ############################
+
+### DESeq2 (HERVs Only)
+
+all_metadata <- all_metadata %>% replace(is.na(.), "Missing")
+
+all.countdat <- all.counts.mfilt.herv
+cat(sprintf('%d variables\n', nrow(all.countdat)))
+
+stopifnot(all(colnames(all.countdat) == rownames(all_metadata)))
+
+all.dds <- DESeq2::DESeqDataSetFromMatrix(countData = all.countdat,
+                                            colData = all_metadata,
+                                            design = ~ cancer_type)
+
+all.dds <- DESeq2::DESeq(all.dds, parallel=T)
+all.tform <- DESeq2::varianceStabilizingTransformation(all.dds, blind=FALSE)
+
+## PCA
+all.herv.pca.obj <-
+  pca_standard(tform = all.tform, 
+               metadata = all_metadata, 
+               var = 0.9)
+# 9 PCs for Elbow method
+# 17 PCs for Horn method
+# 1 PCs needed to explain 50 percent of variation
+
+
+############################## ALL LYMPHOMA BIPLOTS HERVs ################################
+
+## Biplot with projects (only HERVs)
+
+biplot(all.herv.pca.obj, 
+       lab = NULL,
+       showLoadings = TRUE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 0.9),
+       pointSize = 2, 
+       encircle = FALSE,
+       sizeLoadingsNames =4,
+       lengthLoadingsArrowsFactor = 3,
+       drawConnectors = TRUE,
+       colby = "subtype",
+       colkey = c(wes_palette("FantasticFox1"),
+                  c(wes_palette("Moonrise3")[2:5])),
+       shape = "cancer_type", 
+       shapekey = c("DLBCL" = 15, 
+                    "BL" = 8,
+                    "FL" = 2),
+       legendPosition = "bottom")  +
+  theme_cowplot() + 
+  coord_fixed(ratio = 3)
+  
+
+ggsave("plots/05b-all_lymphoma_hervs_biplot_pc1_pc2_cancertype.pdf", height = 12, width = 8)
+
+######################### ALL LYMPHOMA LOADINGS HERVs ##########################
+
+rangeRetain <- 0.01
+PCAtools::plotloadings(all.herv.pca.obj,
+                       title=paste0("All lympgoma HERV loadings"),
+                       rangeRetain = rangeRetain,
+                       caption = paste0('Top ', rangeRetain * 100, '% variables'),
+                       subtitle = 'PC1-PC5',
+                       shapeSizeRange = c(3,3),    
+                       labSize = 3.0,    
+                       shape = 24,
+                       col = c('white', 'pink'),
+                       drawConnectors = TRUE
+)
+
+ggsave("plots/05b-all_lymphoma_hervs_loadings_plot.pdf", height = 10, width = 10)
+
+##################### ALL TOGETHER DESEQ HERVs AND GENES #######################
+
+### DESeq2 (HERVs and Genes)
+
+all.g.countdat <- all.counts.mfilt.comb
+cat(sprintf('%d variables\n', nrow(all.g.countdat)))
+
+stopifnot(all(colnames(all.g.countdat) == rownames(all_metadata)))
+
+all.g.dds <- DESeq2::DESeqDataSetFromMatrix(countData = all.g.countdat,
+                                          colData = all_metadata,
+                                          design = ~ cancer_type)
+
+all.g.dds <- DESeq2::DESeq(all.g.dds, parallel=T)
+all.g.tform <- DESeq2::varianceStabilizingTransformation(all.g.dds, blind=FALSE)
+
+## PCA
+all.g.pca.obj <-
+  pca_standard(tform = all.g.tform, 
+               metadata = all_metadata, 
+               var = 0.9)
+# 16 PCs for Elbow method
+# 41 PCs for Horn method
+# 9 PCs needed to explain 50 percent of variation
+
+all(rownames(all.g.pca.obj$loadings) %in% rownames(gene_table))
+rownames(all.g.pca.obj$loadings) <- 
+  gene_table[rownames(all.g.pca.obj$loadings), 'display']
+
+##################### ALL LYMPHOMA BIPLOTS HERVs & GENES #######################
+
+## Biplot with projects (HERVs and genes)
+
+biplot(all.g.pca.obj, 
+       lab = NULL,
+       showLoadings = TRUE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 0.9),
+       pointSize = 2, 
+       encircle = FALSE,
+       sizeLoadingsNames =4,
+       lengthLoadingsArrowsFactor = 3,
+       drawConnectors = TRUE,
+       colby = "subtype",
+       colkey = c(wes_palette("FantasticFox1"),
+                  c(wes_palette("Moonrise3")[2:5])),
+       shape = "cancer_type", 
+       shapekey = c("DLBCL" = 15, 
+                    "BL" = 8,
+                    "FL" = 2),
+       legendPosition = "bottom")  +
+  theme_cowplot() + 
+  coord_fixed(ratio = 2)
+
+
+ggsave("plots/05b-all_lymphoma_hervsgenes_biplot_pc1_pc2_cancertype.pdf", height = 12, width = 8)
+
+################################# SAVE FILES ###################################
+
+save(DLBCL.dds, DLBCL.tform, DLBCL.herv.pca.obj, 
+     DLBCL.g.dds, DLBCL.g.tform, DLBCL.g.pca.obj, 
+     DLBCL_metadata,
+     file="r_outputs/05b-DLBCL_pca_dds.Rdata")
+
+save(BL.dds, BL.tform, BL.herv.pca.obj, 
+     BL.g.dds, BL.g.tform, BL.g.pca.obj, 
+     BL_metadata,
+     file="r_outputs/05b-BL_pca_dds.Rdata")
+
+save(FL.dds, FL.tform, FL.herv.pca.obj, 
+     FL.g.dds, FL.g.tform, FL.g.pca.obj, 
+     FL_metadata,
+     file="r_outputs/05b-FL_pca_dds.Rdata")
+
+save(all.dds, all.tform, all.herv.pca.obj, 
+     all.g.dds, all.g.tform, all.g.pca.obj, 
+     all_metadata,
+     file="r_outputs/05b-all_lymphoma_pca_dds.Rdata")
