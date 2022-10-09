@@ -139,18 +139,29 @@ FL.filt.l1 <- FL.counts.l1[rowSums(FL.counts.l1 > cutoff.count) >cutoff.samp, ]
 
 save(all.counts.filt.comb, all.counts.filt.tx, all.counts.filt.rtx, 
      all.counts.filt.herv, all.counts.filt.l1, all_metadata, 
+     all.counts.mfilt.tx, all.counts.mfilt.rtx, all.counts.mfilt.comb,
+     all.counts.mfilt.herv, all.counts.mfilt.l1,
      file="r_outputs/02-all_lymphoma_filt_counts.Rdata")
 
 
 save(DLBCL.filt.comb, DLBCL.filt.tx, DLBCL.filt.rtx, 
      DLBCL.filt.herv, DLBCL.filt.l1, DLBCL_metadata, 
+     DLBCL.counts.mfilt.tx, DLBCL.counts.mfilt.rtx,
+     DLBCL.counts.mfilt.comb, DLBCL.counts.mfilt.herv,
+     DLBCL.counts.mfilt.l1,
      file="r_outputs/02-DLBCL_filt_counts.Rdata")
 
 save(BL.filt.comb, BL.filt.tx, BL.filt.rtx, 
      BL.filt.herv, BL.filt.l1, BL_metadata, 
+     BL.counts.mfilt.tx, BL.counts.mfilt.rtx,
+     BL.counts.mfilt.comb, BL.counts.mfilt.herv,
+     BL.counts.mfilt.l1,
      file="r_outputs/02-BL_filt_counts.Rdata")
 
 save(FL.filt.comb, FL.filt.tx, FL.filt.rtx, 
      FL.filt.herv, FL.filt.l1, FL_metadata, 
+     FL.counts.mfilt.tx, FL.counts.mfilt.rtx,
+     FL.counts.mfilt.comb, FL.counts.mfilt.herv,
+     FL.counts.mfilt.l1,
      file="r_outputs/02-FL_filt_counts.Rdata")
 
