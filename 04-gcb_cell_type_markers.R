@@ -24,6 +24,7 @@ library(rtracklayer)
 library(Azimuth)
 library(patchwork)
 library(cowplot)
+library(data.table)
 
 ################################## LOAD DATA ###################################
 
@@ -139,15 +140,17 @@ GCB.norm.merged@meta.data %>% head
 
 saveRDS(GCB.norm.merged, file = 'r_outputs/04-GCB.norm.merged.mapped.Rds')
 
-################################ FIND MARKERS ##################################
+############################### FIND L1 MARKERS ################################
+
+#
 
 Idents(object=GCB.norm.merged) <- "predicted.celltype.l1"
 
 l1.markers <- FindAllMarkers(
   GCB.norm.merged,
   test.use = 'wilcox',    # default = 'wilcox'
-  only.pos = TRUE,        # default = FALSE
-  min.pct = 0.25,         # default = 0.1
+  only.pos = FALSE,        # default = FALSE
+  min.pct = 0.1,         # default = 0.1
   logfc.threshold = 0.25, # default = 0.25
   return.thresh = 0.01    # default = 0.01
 )
@@ -166,4 +169,132 @@ rm(orig.rownames, fmeta)
 
 saveRDS(l1.markers, file = 'r_outputs/04-GCB.norm.merged.l1.markers.rds')
 
+############################### FIND L2 MARKERS ################################
+
+Idents(object=GCB.norm.merged) <- "predicted.celltype.l2"
+
+l2.markers <- FindAllMarkers(
+  GCB.norm.merged,
+  test.use = 'wilcox',    # default = 'wilcox'
+  only.pos = FALSE,        # default = FALSE
+  min.pct = 0.1,         # default = 0.1
+  logfc.threshold = 0.25, # default = 0.25
+  return.thresh = 0.01    # default = 0.01
+)
+
+# Add feature metadata
+fmeta <- GCB.norm.merged[['RNA']]@meta.features %>%
+  tibble::rownames_to_column() %>%
+  select(rowname, symbol, feattype, te_class, te_family)
+
+stopifnot(all(l2.markers$gene %in% fmeta$rowname))
+orig.rownames <- rownames(l2.markers)
+l2.markers <- dplyr::left_join(l2.markers, fmeta, by=c('gene' = 'rowname'))
+rownames(l2.markers) <- orig.rownames
+l2.markers[is.na(l2.markers)] <- ''
+rm(orig.rownames, fmeta)
+
+saveRDS(l2.markers, file = 'r_outputs/04-GCB.norm.merged.l2.markers.rds')
+
+
+################################# PLOT UMAPs ###################################
+
+umap1_lim <- range(GCB.norm.merged[['umap.proj']]@cell.embeddings[,1])
+umap2_lim <- range(GCB.norm.merged[['umap.proj']]@cell.embeddings[,2])
+
+pdf('plots/04-GCB.norm.merged.mapped.l1.pdf', width=12, height=12)
+nclust <- length(unique(GCB.norm.merged@meta.data$predicted.celltype.l1))
+p <- DimPlot(GCB.norm.merged,
+             group.by = "predicted.celltype.l1",
+             label = TRUE,
+             cols=Seurat::DiscretePalette(nclust, 'glasbey'),
+             raster = TRUE,
+             raster.dpi = c(1200, 1200)
+)
+p + xlim(umap1_lim) + ylim(umap2_lim) + NoAxes() + NoLegend() + theme(plot.title=element_blank())
+dev.off()
+
+
+pdf('plots/GCB.norm.merged.mapped.l2.pdf', width=10, height=10)
+nclust <- length(unique(GCB.norm.merged@meta.data$predicted.celltype.l2))
+p <- DimPlot(GCB.norm.merged,
+             repel = TRUE,
+             max.overlaps=0,
+             label.size = 10,
+             group.by = "predicted.celltype.l2",
+             label = TRUE,
+             cols=c(Seurat::DiscretePalette(36, c('polychrome')),
+                    Seurat::DiscretePalette(32, c('glasbey'))),
+             raster = TRUE,
+             raster.dpi = c(1200, 1200)
+)
+p + xlim(umap1_lim) + ylim(umap2_lim) + NoAxes() + NoLegend() + theme(plot.title=element_blank())
+dev.off()
+
+############################## L1 FEATURE PLOTS ################################
+# condition_pct.1: percentage of cells where the gene is detected in the cluster 
+# for condition
+# condition_pct.2: percentage of cells where the gene is detected on average in 
+# the other clusters for condition
+
+
+herv_markers_l1 <- l1.markers[l1.markers$te_class=='LTR',]
+
+nrow(herv_markers_l1) # There are 57 HERV markers.
+length(unique(herv_markers_l1$gene)) # There are 26 unique HERVs.
+
+## CD4 T: MER41-15q21.2a
+## Natural killer: HERVH-12p13.31d, HARLEQUIN-17q12, MER4-22q12.3, 
+##                 HUERSP1-11p15.4b, ERV316A3-2q22.2b
+## Naive B: ERV316A3-2q22.2b
+## Monocyte/macrophage: MER34B-1q23.3a, MER34B-4q31.3, HARLEQUIN-17q25.3a, 
+##                      ERVLB4-1p34.2a, MER4B-7p14.3
+## Naive CD4 T: ERV316A3-2q22.2b
+## Activated Naive B: HARLEQUIN-1q32.1
+## Memory B: ERV316A3-2q22.2b
+## Plasmacytoid dendritic: MER4-10q23.31b, HERV3-Yq11.223b, HARLEQUIN-1q32.1
+## Plasma: HUERSP2-19q13.2, HARLEQUIN-1q32.1
+## Cycling B: ERV316A3-8q13.3a
+## Germinal center B: HARLEQUIN-1q32.1
+
+herv_markers_l2 <- l2.markers[l2.markers$te_class=='LTR',]
+
+nrow(herv_markers_l2) # There are 144 HERV markers.
+length(unique(herv_markers_l2$gene)) # There are 61 unique HERVs.
+
+
+############################## L2 FEATURE PLOTS ################################
+
+fpcols <- c('#eeeeeeFF', viridis::viridis(6))
+
+PB_all <- herv_markers_l2[herv_markers_l2$cluster == 'PB', 'gene']
+lapply(PB_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
+b_x <- c('HML6-19q13.43b', 'ERV316A3-8q13.3a')
+pdf('plots/04-gcb_combined_herv_markers_PB.pdf', width=6, height=3)
+p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=2, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+dev.off()
+
+pdf('plots/04-gcb_combined_HARLEQUIN-1q32.1.pdf', width=3, height=3)
+p <- FeaturePlot(GCB.norm.merged, "HARLEQUIN-1q32.1", cols=fpcols, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+dev.off()
+
+PDC_all <- herv_markers_l2[herv_markers_l2$cluster == 'PDC', 'gene']
+lapply(PDC_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
+b_x <- c("ERV316A3-2q22.2b", "ERVLE-4q24e", "HARLEQUIN-1q32.1", 
+         "HARLEQUIN-10q23.1", "HML1-1q32.1", "HERVEA-5q22.2", "ERV316A3-8q13.3a" )
+pdf('plots/04-gcb_combined_herv_markers_PDC.pdf', width=9, height=9)
+p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=3, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+dev.off()
+
+MB_all <- herv_markers_l2[herv_markers_l2$cluster  %like%  'MB', 'gene']
+lapply(MB_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
+b_x <- c("ERV316A3-2q22.2b", "ERVLE-4q24e", "ERV316A3-8q13.3a", 
+         "HARLEQUIN-1q32.1", "HERVS71-19q13.12a", "MER101-12p13.31b")
+pdf('plots/04-gcb_combined_herv_markers_MB.pdf', width=9, height=6)
+p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=3, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+dev.off()
 
