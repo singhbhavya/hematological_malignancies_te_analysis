@@ -278,16 +278,23 @@ fpcols <- c('#eeeeeeFF', viridis::viridis(6))
 PB_all <- herv_markers_l2[herv_markers_l2$cluster == 'PB', 'gene']
 lapply(PB_all, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
 b_x <- c('HML6-19q13.43b', 'ERV316A3-8q13.3a')
-pdf('plots/04-gcb_combined_l2_herv_markers_PB.pdf', width=6, height=3)
+pdf('plots/04-gcb_combined_l2_herv_markers_PB.pdf', width=, height=3)
 p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=2, raster=FALSE)
-p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8)) 
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10)) 
 dev.off()
 
 ## HARLEQUIN-1q32.1
 pdf('plots/04-gcb_combined_l2_HARLEQUIN-1q32.1.pdf', width=3, height=3)
 p <- FeaturePlot(GCB.norm.merged, "HARLEQUIN-1q32.1", cols=fpcols, raster=FALSE)
-p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
 dev.off()
+
+## ERV316A3-8q13.3a
+pdf('plots/04-gcb_combined_l2_ERV316A3-8q13.3a.pdf', width=3, height=3)
+p <- FeaturePlot(GCB.norm.merged, "ERV316A3-8q13.3a", cols=fpcols, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
+dev.off()
+
 
 ## PDC (Plasmacytoid dendritic cells)
 PDC_all <- herv_markers_l2[herv_markers_l2$cluster == 'PDC', 'gene']
@@ -296,7 +303,7 @@ b_x <- c("ERV316A3-2q22.2b", "ERVLE-4q24e", "HARLEQUIN-1q32.1",
          "HARLEQUIN-10q23.1", "HML1-1q32.1", "HERVEA-5q22.2", "ERV316A3-8q13.3a" )
 pdf('plots/04-gcb_combined_l2_herv_markers_PDC.pdf', width=9, height=9)
 p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=3, raster=FALSE)
-p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
 dev.off()
 
 ## All memory B cell clusters
@@ -306,15 +313,40 @@ b_x <- c("ERV316A3-2q22.2b", "ERVLE-4q24e", "ERV316A3-8q13.3a",
          "HARLEQUIN-1q32.1", "HERVS71-19q13.12a", "MER101-12p13.31b")
 pdf('plots/04-gcb_combined_l2_herv_markers_MB.pdf', width=9, height=6)
 p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=3, raster=FALSE)
-p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & NoLegend() & theme(plot.title=element_text(size=8))
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
 dev.off()
 
 ## HARLEQUIN-17q25
-pdf('plots/04-gcb_combined_l2_HARLEQUIN-17q25.pdf', width=3, height=3)
+pdf('plots/04-gcb_combined_l2_HARLEQUIN-17q25.pdf', width=6, height=3)
 p <- FeaturePlot(GCB.norm.merged, c("HARLEQUIN-17q25.3a", "HARLEQUIN-17q25.3b"), 
                  cols=fpcols, ncol=2, raster=FALSE)
-p & xlim(umap1_lim) & ylim(umap2_lim) & NoAxes() & theme(plot.title=element_text(size=8))
+p & xlim(umap1_lim) & ylim(umap2_lim) & theme(plot.title=element_text(size=10))
 dev.off()
+
+## ERV316A3-3q13.31c
+pdf('plots/04-gcb_combined_l2_ERV316A3-3q13.31c.pdf', width=3, height=3)
+p <- FeaturePlot(GCB.norm.merged, "ERV316A3-3q13.31", cols=fpcols, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
+dev.off()
+
+## DZ S Phase  
+DZ_sphase <- herv_markers_l2[herv_markers_l2$cluster == 'DZ_Sphase', 'gene']
+lapply(DZ_sphase, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
+b_x <- c('ERV316A3-8q13.3a', 'HARLEQUIN-1q32.1')
+pdf('plots/04-gcb_combined_l2_herv_markers_DZ_sphase.pdf', width=3, height=6)
+p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=1, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
+dev.off()
+
+## csMBC  
+csmbc <- herv_markers_l2[herv_markers_l2$cluster == 'csMBC', 'gene']
+lapply(csmbc, function(x) herv_markers_l2[herv_markers_l2$gene == x,])
+b_x <- c('ERV316A3-2q22.2b', 'HML1-1q32.1', 'HERVH-2p14b')
+pdf('plots/04-gcb_combined_l2_herv_markers_csMBC.pdf', width=3, height=9)
+p <- FeaturePlot(GCB.norm.merged, b_x, cols=fpcols, ncol=1, raster=FALSE)
+p & xlim(umap1_lim) & ylim(umap2_lim) & NoLegend() & theme(plot.title=element_text(size=10))
+dev.off()
+
 
 ################################# SAVE FILES ###################################
 

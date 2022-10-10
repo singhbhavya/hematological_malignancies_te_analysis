@@ -313,6 +313,27 @@ ggplot(ERV316A3_3q13.31c, aes(x = clinical_variant_status,
 
 dev.off()
 
+pdf("plots/05c-BL_HARLEQUIN_1q32.1.pdf", height=4, width=4)
+HARLEQUIN_1q32.1 <-
+  plotCounts(BL.dds, gene="HARLEQUIN_1q32.1", intgroup=c("ebv_status", "clinical_variant"),
+             returnData = TRUE)
+
+HARLEQUIN_1q32.1$clinical_variant_status <- paste(HARLEQUIN_1q32.1$ebv_status,
+                                                  HARLEQUIN_1q32.1$clinical_variant,
+                                                   sep=" ")
+
+ggplot(HARLEQUIN_1q32.1, aes(x = clinical_variant_status, 
+                              y = count))  + 
+  geom_bar(stat="identity") +
+  ggtitle("HARLEQUIN_1q32.1") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.75, hjust=0.75))
+
+
+dev.off()
+
+
 ############################## BL HERV HEATMAPS ################################
 
 select <- rownames(bl.res05lf2[1:20,])
