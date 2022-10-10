@@ -79,6 +79,9 @@ pca_standard <- function(tform, metadata, var) {
 
 ### DESeq2 (HERVs Only)
 
+DLBCL_metadata$COO_class <- DLBCL_metadata$COO_class %>% 
+  replace(is.na(.), "Missing")
+
 DLBCL.countdat <- DLBCL.counts.mfilt.herv
 cat(sprintf('%d variables\n', nrow(DLBCL.countdat)))
 
@@ -86,7 +89,7 @@ stopifnot(all(colnames(DLBCL.countdat) == rownames(DLBCL_metadata)))
 
 DLBCL.dds <- DESeq2::DESeqDataSetFromMatrix(countData = DLBCL.countdat,
                                       colData = DLBCL_metadata,
-                                      design = ~ project)
+                                      design = ~ project + COO_class)
 
 DLBCL.dds <- DESeq2::DESeq(DLBCL.dds, parallel=T)
 DLBCL.tform <- DESeq2::varianceStabilizingTransformation(DLBCL.dds, blind=FALSE)
@@ -98,7 +101,7 @@ DLBCL.herv.pca.obj <-
                var = 0.9)
 # 8 PCs for Elbow method
 # 34 PCs for Horn method
-# 29 PCs needed to explain 50 percent of variation
+# 28 PCs needed to explain 50 percent of variation
 
 ############################# DLBCL BIPLOTS HERVs ###############################
 
@@ -171,7 +174,7 @@ stopifnot(all(colnames(DLBCL.g.countDat) == rownames(DLBCL_metadata)))
 
 DLBCL.g.dds <- DESeq2::DESeqDataSetFromMatrix(countData = DLBCL.g.countDat,
                                       colData = DLBCL_metadata,
-                                      design = ~ project)
+                                      design = ~ project + COO_class)
 
 DLBCL.g.dds <- DESeq2::DESeq(DLBCL.g.dds, parallel=T)
 DLBCL.g.tform <- DESeq2::varianceStabilizingTransformation(DLBCL.g.dds, 
