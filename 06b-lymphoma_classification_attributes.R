@@ -32,6 +32,8 @@ load("r_outputs/02-BL_filt_counts.Rdata")
 load("r_outputs/06-BL_clusters.Rdata")
 load("r_outputs/02-FL_filt_counts.Rdata")
 load("r_outputs/06-FL_clusters.Rdata")
+load("r_outputs/06-DLBCL_clusters.Rdata")
+load("r_outputs/02-DLBCL_filt_counts.Rdata")
 
 ################################### BL CLASSES #################################
 
@@ -93,4 +95,16 @@ ggplot(fl_clusters, aes(x=who_diagnosis, fill = cluster_name)) +
 
 dev.off()
 
+################################# DLBCL CLASSES ################################
 
+
+DLBCL_metadata$sample <- row.names(DLBCL_metadata)
+dlbcl_clusters <- merge(dlbcl_clusters, DLBCL_metadata, by="sample")
+
+ggplot(dlbcl_clusters, aes(x=COO_class, fill = cluster_name)) +
+  geom_bar(stat="count", position="stack") +
+  coord_flip() +
+  theme_cowplot() +
+  labs(fill = "scCOO Cluster") +
+  ylab("Number of DLBCL Samples") +
+  xlab("COO class")

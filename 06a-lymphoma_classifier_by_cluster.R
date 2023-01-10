@@ -28,8 +28,12 @@ load("r_outputs/01-refs.Rdata")
 load("r_outputs/02-BL_filt_counts.Rdata")
 load("r_outputs/05b-BL_pca_dds.Rdata")
 load("r_outputs/04-gcb.norm.merged.azimuth.Rdata")
+load("r_outputs/02-FL_filt_counts.Rdata")
+load("r_outputs/05b-FL_pca_dds.Rdata")
+load("r_outputs/02-DLBCL_filt_counts.Rdata")
+load("r_outputs/05b-DLBCL_pca_dds.Rdata")
 
-################################### Z SCORES ###################################
+################################# BL Z SCORES ##################################
 
 # Change the vst to z-scores
 BL.vsd <- assay(BL.g.tform)
@@ -40,6 +44,31 @@ rownames(BL.z.tform) <- gene_table[rownames(BL.z.tform), 'display']
 
 # Sanity check
 all(rownames(BL.z.tform) %in% gene_table$display)
+
+################################# FL Z SCORES ##################################
+
+# Change the vst to z-scores
+FL.vsd <- assay(FL.g.tform)
+FL.z.tform <- t(scale(t(FL.vsd)))
+
+# Change all gene IDs to gene names
+rownames(FL.z.tform) <- gene_table[rownames(FL.z.tform), 'display']
+
+# Sanity check
+all(rownames(FL.z.tform) %in% gene_table$display)
+
+############################### DLBCL Z SCORES #################################
+
+# Change the vst to z-scores
+DLBCL.vsd <- assay(DLBCL.g.tform)
+DLBCL.z.tform <- t(scale(t(DLBCL.vsd)))
+
+# Change all gene IDs to gene names
+rownames(DLBCL.z.tform) <- gene_table[rownames(DLBCL.z.tform), 'display']
+
+# Sanity check
+all(rownames(DLBCL.z.tform) %in% gene_table$display)
+
 
 ############################### CLASSIFICATION #################################
 
@@ -160,7 +189,7 @@ classify_lymphomas(z_scores_file = BL.z.tform,
                    count_file = BL.counts.mfilt.comb)
 
 # Assign dfs
-bl_clusters <- dlbcl_final_classes
+bl_clusters <- final_classes
 bl_classifications <- classifications
 bl_classifications_filtered <- classifications_filtered
 
@@ -173,3 +202,47 @@ bl_clusters$cluster_name <-
 
 save(bl_clusters, bl_classifications, bl_classifications_filtered,
      file="r_outputs/06-BL_clusters.Rdata")
+
+################################ CLASSIFY FL  ##################################
+
+# Run classifier on FL
+classify_lymphomas(z_scores_file = FL.z.tform,
+                   cluster_file = l2.markers,
+                   count_file = FL.counts.mfilt.comb)
+
+# Assign dfs
+fl_clusters <- final_classes
+fl_classifications <- classifications
+fl_classifications_filtered <- classifications_filtered
+
+# Assign cluster names
+
+fl_clusters$cluster_name <- 
+  unique(l2.markers$cluster)[as.numeric(fl_clusters$cluster)]
+
+# Save files
+
+save(fl_clusters, fl_classifications, fl_classifications_filtered,
+     file="r_outputs/06-FL_clusters.Rdata")
+
+############################## CLASSIFY DLBCL  #################################
+
+# Run classifier on FL
+classify_lymphomas(z_scores_file = DLBCL.z.tform,
+                   cluster_file = l2.markers,
+                   count_file = DLBCL.counts.mfilt.comb)
+
+# Assign dfs
+dlbcl_clusters <- final_classes
+dlbcl_classifications <- classifications
+dlbcl_classifications_filtered <- classifications_filtered
+
+# Assign cluster names
+
+dlbcl_clusters$cluster_name <- 
+  unique(l2.markers$cluster)[as.numeric(dlbcl_clusters$cluster)]
+
+# Save files
+
+save(dlbcl_clusters, dlbcl_classifications, dlbcl_classifications_filtered,
+     file="r_outputs/06-DLBCL_clusters.Rdata")
