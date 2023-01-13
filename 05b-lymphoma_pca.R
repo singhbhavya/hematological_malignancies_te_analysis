@@ -33,6 +33,7 @@ load("r_outputs/02-BL_filt_counts.Rdata")
 load("r_outputs/02-FL_filt_counts.Rdata")
 load("r_outputs/01-metadata.Rdata")
 load("r_outputs/01-refs.Rdata")
+load("r_outputs/02-all_lymphoma_filt_counts.Rdata")
 
 ################################# FUNCTION SCREE PLOT #################################
 
@@ -137,6 +138,7 @@ biplot(DLBCL.herv.pca.obj,
        sizeLoadingsNames = 4,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
+       ellipse = TRUE,
        colby = "COO_class",
        shape = "project", shapekey = c("NCICCR-DLBCL" = 15, "TCGA-DLBC" = 8),
        colkey = c("GCB" = "royalblue", 
@@ -300,6 +302,7 @@ biplot(BL.herv.pca.obj,
        sizeLoadingsNames = 4,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
+       ellipse = TRUE,
        colby = "clinical_variant",
        colkey = c("Endemic BL" = wes_palette("Zissou1")[2], 
                   "Sporadic BL" = wes_palette("Zissou1")[4]),
@@ -321,11 +324,14 @@ biplot(BL.herv.pca.obj,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
        colby = "ebv_status",
+       ellipse = TRUE,
        shape = "clinical_variant", 
        shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
        colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
                   "EBV-negative" = wes_palette("Darjeeling1")[4]),
-       legendPosition = "right")  +
+       legendPosition = "right",
+       xlim = c(-50, 70),
+       ylim= c(-50, 50))  +
   theme_cowplot()
 
 ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
