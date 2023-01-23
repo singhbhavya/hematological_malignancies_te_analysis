@@ -204,7 +204,9 @@ remove(FL_clinical_metadata, FL_SRA_run_table)
 
 # Import Follicular Lymphoma metadata
 
-BL_metadata <- BL_clinical_metadata[BL_clinical_metadata$pilot %like% "True",]
+#BL_metadata <- BL_clinical_metadata[BL_clinical_metadata$pilot %like% "True",]
+
+BL_metadata <- BL_clinical_metadata
 
 BL_metadata <- BL_metadata[, c("case", "project_id", "submitter_id", 
                                         "sample_type", "sample", "tissue_type",
@@ -347,7 +349,9 @@ reorder_idx_counts.rtx <- match(rownames(BL_metadata), colnames(BL.counts.rtx))
 BL.counts.rtx <- BL.counts.rtx[,reorder_idx_counts.rtx]
 
 reorder_idx_counts.rtx <- match(rownames(FL_metadata), colnames(FL.counts.rtx))
+reorder_idx_counts.tx <- match(rownames(FL_metadata), colnames(FL.counts.tx))
 FL.counts.rtx <- FL.counts.rtx[,reorder_idx_counts.rtx]
+FL.counts.tx <- FL.counts.tx[,reorder_idx_counts.tx]
 
 # sanity check
 stopifnot(all(names(DLBCL.counts.tx) == names(DLBCL.counts.rtx)))
