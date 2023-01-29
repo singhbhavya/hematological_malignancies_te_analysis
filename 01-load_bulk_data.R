@@ -90,6 +90,9 @@ TCGA_DLBCL_clinical_metadata <-
 BL_clinical_metadata <- 
   read.csv("metadata/BL/BL_samples_metadata.tsv", sep="\t")
 
+BL_other_metadata <- 
+  read_excel("metadata/BL/blood.2022016534-s02.xlsx")
+
 # Import Follicular Lymphoma metadata
 FL_clinical_metadata <- 
   read_excel("metadata/FL/CGCI_NHL_ClinicalDataSet_20110710.xlsx")
@@ -215,6 +218,16 @@ BL_metadata <- BL_metadata[, c("case", "project_id", "submitter_id",
                                         "age_at_diagnosis", "anatomic_site_classification",
                                         "tissue_source_site")]
 
+
+BL_metadata$tumor_biopsy <- BL_other_metadata$`Tumor biopsy`[match(BL_metadata$case,
+                                                             BL_other_metadata$`Patient barcode`)]
+
+BL_metadata$MYC_SV <- BL_other_metadata$`MYC SV`[match(BL_metadata$case,
+                                                       BL_other_metadata$`Patient barcode`)]
+BL_metadata$MYC_SV_Partner <- BL_other_metadata$`MYC SV partner`[match(BL_metadata$case,
+                                                                       BL_other_metadata$`Patient barcode`)]
+BL_metadata$Total_N_SSM <- BL_other_metadata$`total N of SSM`[match(BL_metadata$case,
+                                                                    BL_other_metadata$`Patient barcode`)]
 remove(BL_clinical_metadata)
 
 ######################## RENAME COLUMNS & MERGE METADATA #######################
@@ -224,7 +237,8 @@ colnames(BL_metadata) <- c("case", "project_id", "submitter_id",
                            "tumor_descriptor", "cohort", "clinical_variant",
                            "ebv_status", "ebv_genome_type", "gender",
                            "age_at_diagnosis", "anatomic_site_classification",
-                           "tissue_source_site")
+                           "tissue_source_site", "tumor_biopsy", "MYC_SV", "MYC_SV_partner",
+                           "Total_N_SSM")
 
 colnames(FL_metadata) <- c("patient_id", "who_diagnosis", 
                            "days_to_birth_from_date_of_diagnosis",
@@ -253,7 +267,7 @@ DLBCL_metadata$subtype <- DLBCL_metadata$COO_class
 FL_metadata$cancer_type <- "FL"
 FL_metadata$subtype <- FL_metadata$who_diagnosis
 BL_metadata$cancer_type <- "BL"
-BL_metadata$subtype <- BL_metadata$clinical_variant
+BL_metadata$subtype <- paste0(BL_metadata$clinical_variant, " ", BL_metadata$ebv_status)
 
 all_metadata <- rbind(
   DLBCL_metadata[, c("cancer_type", "subtype")],

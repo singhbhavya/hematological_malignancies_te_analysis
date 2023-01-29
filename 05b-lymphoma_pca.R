@@ -68,6 +68,7 @@ pca_standard <- function(tform, metadata, var) {
     geom_label(aes(x = elbow + 1, y = 50,
                    label = 'Elbow method', vjust = -1))
   
+  
   cat(sprintf('%d PCs for Elbow method\n', elbow))
   cat(sprintf('%d PCs for Horn method\n', horn$n))
   cat(sprintf('%d PCs needed to explain %d percent of variation\n', 
@@ -81,9 +82,9 @@ pca_standard <- function(tform, metadata, var) {
 ### DESeq2 (HERVs Only)
 
 DLBCL_metadata$COO_class <- DLBCL_metadata$COO_class %>% 
-  replace(is.na(.), "Missing")
+  replace(is.na(.), "Unclass")
 
-DLBCL.countdat <- DLBCL.counts.mfilt.herv
+DLBCL.countdat <- DLBCL.filt.herv
 cat(sprintf('%d variables\n', nrow(DLBCL.countdat)))
 
 stopifnot(all(colnames(DLBCL.countdat) == rownames(DLBCL_metadata)))
@@ -100,9 +101,9 @@ DLBCL.herv.pca.obj <-
   pca_standard(tform = DLBCL.tform, 
                metadata = DLBCL_metadata, 
                var = 0.9)
-# 8 PCs for Elbow method
-# 34 PCs for Horn method
-# 28 PCs needed to explain 50 percent of variation
+# 4 PCs for Elbow method
+# 22 PCs for Horn method
+# 22 PCs needed to explain 50 percent of variation
 
 ############################# DLBCL BIPLOTS HERVs ###############################
 
@@ -169,7 +170,7 @@ ggsave("plots/05b-dlbcl_hervs_loadings_plot.pdf", height = 10, width = 10)
 
 ########################## DLBCL DESEQ HERVS & GENES ###########################
 
-DLBCL.g.countDat <- DLBCL.counts.mfilt.comb
+DLBCL.g.countDat <- DLBCL.filt.comb
 cat(sprintf('%d variables\n', nrow(DLBCL.g.countDat)))
 
 stopifnot(all(colnames(DLBCL.g.countDat) == rownames(DLBCL_metadata)))
@@ -188,9 +189,9 @@ DLBCL.g.pca.obj <-
                metadata = DLBCL_metadata, 
                var = 0.9)
 
-# 5 PCs for Elbow method
-# 50 PCs for Horn method
-# 20 PCs needed to explain 50 percent of variation
+# 3 PCs for Elbow method
+# 45 PCs for Horn method
+# 21 PCs needed to explain 50 percent of variation
 
 all(rownames(DLBCL.g.pca.obj$loadings) %in% rownames(gene_table))
 rownames(DLBCL.g.pca.obj$loadings) <- 
@@ -230,6 +231,7 @@ biplot(DLBCL.g.pca.obj,
        encircle = FALSE,
        sizeLoadingsNames = 4,
        lengthLoadingsArrowsFactor = 1.5,
+       ellipse = TRUE,
        drawConnectors = TRUE,
        colby = "COO_class",
        shape = "project", shapekey = c("NCICCR-DLBCL" = 15, "TCGA-DLBC" = 8),
@@ -265,7 +267,7 @@ ggsave("plots/05b-dlbcl_hervsgenes_loadings_plot.pdf", height = 10, width = 10)
 
 ### DESeq2 (HERVs Only)
 
-BL.countdat <- BL.counts.mfilt.herv
+BL.countdat <- BL.filt.herv
 cat(sprintf('%d variables\n', nrow(BL.countdat)))
 
 stopifnot(all(colnames(BL.countdat) == rownames(BL_metadata)))
@@ -283,9 +285,9 @@ BL.herv.pca.obj <-
   pca_standard(tform = BL.tform, 
                metadata = BL_metadata, 
                var = 0.1)
-# 5 PCs for Elbow method
-# 11 PCs for Horn method
-# 12 PCs needed to explain 50 percent of variation
+# 3 PCs for Elbow method
+# 3 PCs for Horn method
+# 1 PCs needed to explain 50 percent of variation
 
 
 ############################## BL BIPLOTS HERVs ################################
@@ -302,7 +304,7 @@ biplot(BL.herv.pca.obj,
        sizeLoadingsNames = 4,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
-       ellipse = TRUE,
+       ellipse = FALSE,
        colby = "clinical_variant",
        colkey = c("Endemic BL" = wes_palette("Zissou1")[2], 
                   "Sporadic BL" = wes_palette("Zissou1")[4]),
@@ -324,17 +326,16 @@ biplot(BL.herv.pca.obj,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
        colby = "ebv_status",
-       ellipse = TRUE,
+       ellipse = FALSE,
        shape = "clinical_variant", 
        shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
        colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
                   "EBV-negative" = wes_palette("Darjeeling1")[4]),
-       legendPosition = "right",
-       xlim = c(-50, 70),
-       ylim= c(-50, 50))  +
+       legendPosition = "right")  +
   theme_cowplot()
 
 ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
+
 
 ############################## BL LOADINGS HERVs ###############################
 
@@ -357,7 +358,7 @@ ggsave("plots/05b-BL_hervs_loadings_plot.pdf", height = 10, width = 10)
 
 ### DESeq2 (HERVs and Genes)
 
-BL.g.countdat <- BL.counts.mfilt.comb
+BL.g.countdat <- BL.filt.comb
 cat(sprintf('%d variables\n', nrow(BL.g.countdat)))
 
 stopifnot(all(colnames(BL.g.countdat) == rownames(BL_metadata)))
@@ -375,9 +376,9 @@ BL.g.pca.obj <-
   pca_standard(tform = BL.g.tform, 
                metadata = BL_metadata, 
                var = 0.1)
-# 8 PCs for Elbow method
-# 11 PCs for Horn method
-# 9 PCs needed to explain 50 percent of variation
+# 6 PCs for Elbow method
+# 34 PCs for Horn method
+# 10 PCs needed to explain 50 percent of variation
 
 all(rownames(BL.g.pca.obj$loadings) %in% rownames(gene_table))
 rownames(BL.g.pca.obj$loadings) <- 
@@ -448,7 +449,7 @@ ggsave("plots/05b-BL_hervsgenes_loadings_plot.pdf", height = 10, width = 10)
 
 ### DESeq2 (HERVs Only)
 
-FL.countdat <- FL.counts.mfilt.herv
+FL.countdat <- FL.filt.herv
 cat(sprintf('%d variables\n', nrow(FL.countdat)))
 
 stopifnot(all(colnames(FL.countdat) == rownames(FL_metadata)))
@@ -499,7 +500,7 @@ ggsave("plots/05b-FL_hervs_biplot_pc1_pc2_who.pdf", height = 6, width = 8)
 
 ### DESeq2 (HERVs and genes)
 
-FL.g.countdat <- FL.counts.mfilt.comb
+FL.g.countdat <- FL.filt.comb
 cat(sprintf('%d variables\n', nrow(FL.g.countdat)))
 
 stopifnot(all(colnames(FL.g.countdat) == rownames(FL_metadata)))
@@ -516,7 +517,7 @@ FL.g.pca.obj <-
   pca_standard(tform = FL.g.tform, 
                metadata = FL_metadata, 
                var = 0.1)
-# 4 PCs for Elbow method
+# 6 PCs for Elbow method
 # 5 PCs for Horn method
 # 4 PCs needed to explain 50 percent of variation
 
@@ -556,7 +557,7 @@ ggsave("plots/05b-FL_hervsgenes_biplot_pc1_pc2_who.pdf", height = 6, width = 8)
 
 all_metadata <- all_metadata %>% replace(is.na(.), "Missing")
 
-all.countdat <- all.counts.mfilt.herv
+all.countdat <- all.counts.filt.herv
 cat(sprintf('%d variables\n', nrow(all.countdat)))
 
 stopifnot(all(colnames(all.countdat) == rownames(all_metadata)))
@@ -572,10 +573,10 @@ all.tform <- DESeq2::varianceStabilizingTransformation(all.dds, blind=FALSE)
 all.herv.pca.obj <-
   pca_standard(tform = all.tform, 
                metadata = all_metadata, 
-               var = 0.9)
-# 9 PCs for Elbow method
-# 17 PCs for Horn method
-# 1 PCs needed to explain 50 percent of variation
+               var = 0.5)
+# 11 PCs for Elbow method
+# 39 PCs for Horn method
+# 7 PCs needed to explain 50 percent of variation
 
 
 ############################## ALL LYMPHOMA BIPLOTS HERVs ################################
@@ -594,7 +595,8 @@ biplot(all.herv.pca.obj,
        drawConnectors = TRUE,
        colby = "subtype",
        colkey = c(wes_palette("FantasticFox1"),
-                  c(wes_palette("Moonrise3")[2:5])),
+                  c(wes_palette("Moonrise3"),
+                    c(wes_palette("Moonrise2")))),
        shape = "cancer_type", 
        shapekey = c("DLBCL" = 15, 
                     "BL" = 8,
@@ -604,7 +606,7 @@ biplot(all.herv.pca.obj,
   coord_fixed(ratio = 3)
   
 
-ggsave("plots/05b-all_lymphoma_hervs_biplot_pc1_pc2_cancertype.pdf", height = 12, width = 8)
+ggsave("plots/05b-all_lymphoma_hervs_biplot_pc1_pc2_cancertype.pdf", height = 8, width = 8)
 
 ######################### ALL LYMPHOMA LOADINGS HERVs ##########################
 
@@ -627,7 +629,7 @@ ggsave("plots/05b-all_lymphoma_hervs_loadings_plot.pdf", height = 10, width = 10
 
 ### DESeq2 (HERVs and Genes)
 
-all.g.countdat <- all.counts.mfilt.comb
+all.g.countdat <- all.counts.filt.comb
 cat(sprintf('%d variables\n', nrow(all.g.countdat)))
 
 stopifnot(all(colnames(all.g.countdat) == rownames(all_metadata)))
@@ -643,7 +645,7 @@ all.g.tform <- DESeq2::varianceStabilizingTransformation(all.g.dds, blind=FALSE)
 all.g.pca.obj <-
   pca_standard(tform = all.g.tform, 
                metadata = all_metadata, 
-               var = 0.9)
+               var = 0.5)
 # 16 PCs for Elbow method
 # 41 PCs for Horn method
 # 9 PCs needed to explain 50 percent of variation
@@ -668,7 +670,8 @@ biplot(all.g.pca.obj,
        drawConnectors = TRUE,
        colby = "subtype",
        colkey = c(wes_palette("FantasticFox1"),
-                  c(wes_palette("Moonrise3")[2:5])),
+                  c(wes_palette("Moonrise3"),
+                    c(wes_palette("Moonrise2")))),
        shape = "cancer_type", 
        shapekey = c("DLBCL" = 15, 
                     "BL" = 8,

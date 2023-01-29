@@ -135,6 +135,36 @@ FL.filt.comb <- rbind(FL.filt.tx, FL.filt.rtx)
 FL.filt.herv <- FL.counts.herv[rowSums(FL.counts.herv > cutoff.count) > cutoff.samp, ]
 FL.filt.l1 <- FL.counts.l1[rowSums(FL.counts.l1 > cutoff.count) >cutoff.samp, ]
 
+################################ SANITY CHECK ##################################
+
+## Count the number of genes, HERVs, and L1s 
+## (HERVs and L1s should add up to the number of retro genes AND annotation)
+## Really, this should all be the same for combined, TCGA, and NCI. 
+
+cat(sprintf("%d genes in all datasets\n", nrow(all.counts.filt.tx)))
+cat(sprintf("%d retro genes in all datasets\n", nrow(all.counts.filt.rtx)))
+cat(sprintf("%d combined genes in all datasets\n", nrow(all.counts.filt.comb)))
+cat(sprintf("%d HERV in all datasets\n", nrow(all.counts.filt.herv)))
+cat(sprintf("%d L1 in all datasets\n\n", nrow(all.counts.filt.l1)))
+
+cat(sprintf("%d genes in DLBCL\n", nrow(DLBCL.filt.tx)))
+cat(sprintf("%d retro genes in DLBCL\n", nrow(DLBCL.filt.rtx)))
+cat(sprintf("%d combined genes in DLBCL\n", nrow(DLBCL.filt.comb)))
+cat(sprintf("%d HERV in DLBCL\n", nrow(DLBCL.filt.herv)))
+cat(sprintf("%d L1 in DLBCL\n\n", nrow(DLBCL.filt.l1)))
+
+cat(sprintf("%d genes in BL\n", nrow(BL.filt.tx)))
+cat(sprintf("%d retro genes in BL\n", nrow(BL.filt.rtx)))
+cat(sprintf("%d combined genes in BL\n", nrow(BL.filt.comb)))
+cat(sprintf("%d HERV in BL\n", nrow(BL.filt.herv)))
+cat(sprintf("%d L1 in BL\n\n", nrow(BL.filt.l1)))
+
+cat(sprintf("%d genes in FL\n", nrow(FL.filt.tx)))
+cat(sprintf("%d retro genes in FL\n", nrow(FL.filt.rtx)))
+cat(sprintf("%d combined genes FL\n", nrow(FL.filt.comb)))
+cat(sprintf("%d HERV in FL\n", nrow(FL.filt.herv)))
+cat(sprintf("%d L1 in FL\n\n", nrow(FL.filt.l1)))
+
 ################################## SAVE FILES ##################################
 
 save(all.counts.filt.comb, all.counts.filt.tx, all.counts.filt.rtx, 
