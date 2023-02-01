@@ -92,6 +92,8 @@ BL_clinical_metadata <-
 
 BL_other_metadata <- 
   read_excel("metadata/BL/blood.2022016534-s02.xlsx")
+BL_subgroup <- 
+  read_excel("metadata/BL/blood.2022016534-s02.xlsx", sheet = 12)
 
 # Import Follicular Lymphoma metadata
 FL_clinical_metadata <- 
@@ -228,6 +230,11 @@ BL_metadata$MYC_SV_Partner <- BL_other_metadata$`MYC SV partner`[match(BL_metada
                                                                        BL_other_metadata$`Patient barcode`)]
 BL_metadata$Total_N_SSM <- BL_other_metadata$`total N of SSM`[match(BL_metadata$case,
                                                                     BL_other_metadata$`Patient barcode`)]
+
+BL_subgroup$patient_barcode <- substr(BL_subgroup$`Patient barcode`, 1, 21) 
+BL_metadata$subgroup <- BL_subgroup$Subgroup[match(BL_metadata$sample,
+                                                   BL_subgroup$patient_barcode)]
+
 remove(BL_clinical_metadata)
 
 ######################## RENAME COLUMNS & MERGE METADATA #######################
@@ -238,7 +245,7 @@ colnames(BL_metadata) <- c("case", "project_id", "submitter_id",
                            "ebv_status", "ebv_genome_type", "gender",
                            "age_at_diagnosis", "anatomic_site_classification",
                            "tissue_source_site", "tumor_biopsy", "MYC_SV", "MYC_SV_partner",
-                           "Total_N_SSM")
+                           "Total_N_SSM", "subgroup")
 
 colnames(FL_metadata) <- c("patient_id", "who_diagnosis", 
                            "days_to_birth_from_date_of_diagnosis",
