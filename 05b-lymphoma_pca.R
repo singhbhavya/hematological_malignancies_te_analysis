@@ -336,6 +336,28 @@ biplot(BL.herv.pca.obj,
 
 ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
 
+biplot(BL.herv.pca.obj, 
+       lab = NULL,
+       showLoadings = TRUE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "gender",
+       ellipse = FALSE,
+       shape = "ebv_status",
+       legendPosition = "right")  +
+  theme_cowplot()
+
+eigencorplot(BL.herv.pca.obj,
+             metavars = c('ebv_status','clinical_variant','subgroup','gender',
+                          'tissue_source_site','tumor_biopsy','MYC_SV_partner',
+                          'subtype', 'Total_N_SSM', 'anatomic_site_classification'))
+
+pairsplot(BL.herv.pca.obj)
 
 ############################## BL LOADINGS HERVs ###############################
 

@@ -282,7 +282,14 @@ all_metadata <- rbind(
   FL_metadata[, c("cancer_type", "subtype")]
 )
 
+######################## LOAD HEALTHY GCB BULK METADATA ########################
 
+bulk_metadata <- read.csv("metadata/GCB/GCB_Bulk.csv", 
+                          header = TRUE)
+
+rownames(bulk_metadata) <- bulk_metadata$BioSample
+bulk_metadata$cancer_type <- "GCB_Bulk"
+  
 ################################ LOAD TELESCOPE ################################
 
 # Old telescope reports
@@ -333,22 +340,27 @@ load_all_lymphoma_new <- function(df) {
 
 load_all_lymphoma_new(BL_metadata)
 load_all_lymphoma_new(FL_metadata)
+load_all_lymphoma_new(bulk_metadata)
+
 
 ################################## LOAD STAR ###################################
 
 DLBCL_files <- Sys.glob(file.path("results/DLBCL/star_alignment/*", '*.ReadsPerGene.out.tab'))
 BL_files <- Sys.glob(file.path("results/BL/star_alignment/*", '*.ReadsPerGene.out.tab'))
 FL_files <- Sys.glob(file.path("results/FL/star_alignment/*", '*.ReadsPerGene.out.tab'))
+GCB_Buk_files <- Sys.glob(file.path("results/GCB_Bulk/star_alignment/*", '*.ReadsPerGene.out.tab'))
 
 DLBCL.counts.tx <- load_star_counts(DLBCL_files)
 BL.counts.tx <- load_star_counts(BL_files)
 FL.counts.tx <- load_star_counts(FL_files)
+GCB_Bulk.counts.tx <- load_star_counts(GCB_Buk_files)
 
 ################################# SANITY CHECK #################################
 
 stopifnot(all(rownames(DLBCL.counts.rtx) == retro.hg38.v1$locus))
 stopifnot(all(rownames(BL.counts.rtx) == retro.hg38.v1$locus))
 stopifnot(all(rownames(FL.counts.rtx) == retro.hg38.v1$locus))
+stopifnot(all(rownames(GCB_Bulk.counts.rtx) == retro.hg38.v1$locus))
 
 ########################### ORDER SAMPLES / METADATA ###########################
 
@@ -362,6 +374,9 @@ BL.counts.tx <- BL.counts.tx[,reorder_idx_counts.tx]
 reorder_idx_counts.tx <- match(rownames(FL_metadata), colnames(FL.counts.tx))
 FL.counts.tx <- FL.counts.tx[,reorder_idx_counts.tx]
 
+reorder_idx_counts.tx <- match(rownames(bulk_metadata), colnames(GCB_Bulk.counts.tx))
+GCB_Bulk.counts.tx <- GCB_Bulk.counts.tx[,reorder_idx_counts.tx]
+
 # reorder counts.rtx by metadata rowname
 reorder_idx_counts.rtx <- match(rownames(DLBCL_metadata), colnames(DLBCL.counts.rtx))
 DLBCL.counts.rtx <- DLBCL.counts.rtx[,reorder_idx_counts.rtx]
@@ -374,10 +389,14 @@ reorder_idx_counts.tx <- match(rownames(FL_metadata), colnames(FL.counts.tx))
 FL.counts.rtx <- FL.counts.rtx[,reorder_idx_counts.rtx]
 FL.counts.tx <- FL.counts.tx[,reorder_idx_counts.tx]
 
+reorder_idx_counts.rtx <- match(rownames(bulk_metadata), colnames(GCB_Bulk.counts.rtx))
+GCB_Bulk.counts.rtx <- GCB_Bulk.counts.rtx[,reorder_idx_counts.rtx]
+
 # sanity check
 stopifnot(all(names(DLBCL.counts.tx) == names(DLBCL.counts.rtx)))
 stopifnot(all(names(BL.counts.tx) == names(BL.counts.rtx)))
 stopifnot(all(names(FL.counts.tx) == names(FL.counts.rtx)))
+stopifnot(all(names(GCB_Bulk.counts.tx) == names(GCB_Bulk.counts.rtx)))
 
 ################################ COMBINE SAMPLES ###############################
 
@@ -394,6 +413,7 @@ DLBCL.counts.comb <- rbind(DLBCL.counts.tx, DLBCL.counts.rtx)
 BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
 FL.counts.comb <- rbind(FL.counts.tx, FL.counts.rtx)
 all.counts.comb <- rbind(all.counts.tx, all.counts.rtx)
+GCB_Bulk.counts.comb <- rbind(GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx)
 
 ############################# SUBSET HERVs and L1s #############################
 
@@ -403,11 +423,13 @@ DLBCL.counts.herv <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 BL.counts.herv <- BL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 FL.counts.herv <- FL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 all.counts.herv <- all.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
+GCB_Bulk.counts.herv <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 
 DLBCL.counts.l1 <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 BL.counts.l1 <- BL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 FL.counts.l1 <- FL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 all.counts.l1 <- all.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
+GCB_Bulk.counts.l1 <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 
 ################################## SAVE FILES ##################################
 
@@ -424,7 +446,10 @@ save(BL.counts.comb, BL.counts.tx, BL.counts.rtx, BL.counts.herv,
 save(FL.counts.comb, FL.counts.tx, FL.counts.rtx, FL.counts.herv, 
      FL.counts.l1, FL_metadata, file="r_outputs/01-FL_counts.Rdata")
 
-save(all_metadata, DLBCL_metadata, BL_metadata, FL_metadata, 
+save(GCB_Bulk.counts.comb, GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx, GCB_Bulk.counts.herv, 
+     GCB_Bulk.counts.l1, bulk_metadata, file="r_outputs/01-GCB_Bulk_counts.Rdata")
+
+save(all_metadata, DLBCL_metadata, BL_metadata, FL_metadata, bulk_metadata,
      file="r_outputs/01-metadata.Rdata")
 
 save(retro.hg38.v1, retro.annot, gene_table, 
