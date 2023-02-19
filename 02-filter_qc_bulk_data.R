@@ -24,6 +24,7 @@ load("r_outputs/01-all_lymphoma_counts.Rdata")
 load("r_outputs/01-DLBCL_counts.Rdata")
 load("r_outputs/01-BL_counts.Rdata")
 load("r_outputs/01-FL_counts.Rdata")
+load("r_outputs/01-GCB_Bulk_counts.Rdata")
 
 ################################ SANITY CHECK ##################################
 
@@ -54,6 +55,12 @@ cat(sprintf("%d retro genes in FL\n", nrow(FL.counts.rtx)))
 cat(sprintf("%d combined genes FL\n", nrow(FL.counts.comb)))
 cat(sprintf("%d HERV in FL\n", nrow(FL.counts.herv)))
 cat(sprintf("%d L1 in FL\n\n", nrow(FL.counts.l1)))
+
+cat(sprintf("%d genes in GCB Bulk\n", nrow(GCB_Bulk.counts.tx)))
+cat(sprintf("%d retro genes in GCB Bulk\n", nrow(GCB_Bulk.counts.rtx)))
+cat(sprintf("%d combined genes GCB Bulk\n", nrow(GCB_Bulk.counts.comb)))
+cat(sprintf("%d HERV in GCB Bulk\n", nrow(GCB_Bulk.counts.herv)))
+cat(sprintf("%d L1 in GCB Bulk\n", nrow(GCB_Bulk.counts.l1)))
 
 ############################## FILTER ALL DATA #################################
 
@@ -135,6 +142,27 @@ FL.filt.comb <- rbind(FL.filt.tx, FL.filt.rtx)
 FL.filt.herv <- FL.counts.herv[rowSums(FL.counts.herv > cutoff.count) > cutoff.samp, ]
 FL.filt.l1 <- FL.counts.l1[rowSums(FL.counts.l1 > cutoff.count) >cutoff.samp, ]
 
+############################### FILTER GCB Bulk ################################
+
+# Minimum count threshold
+cutoff.count <- 5
+
+# Minimum number of samples meeting the minimum count threshold
+cutoff.samp <- floor(ncol(GCB_Bulk.counts.comb) * 0.1)
+
+GCB_Bulk.counts.mfilt.tx <- GCB_Bulk.counts.tx[rowSums(GCB_Bulk.counts.tx) > cutoff.count, ]
+GCB_Bulk.counts.mfilt.rtx <- GCB_Bulk.counts.rtx[rowSums(GCB_Bulk.counts.rtx) > cutoff.count, ]
+GCB_Bulk.counts.mfilt.comb <- rbind(GCB_Bulk.counts.mfilt.tx, GCB_Bulk.counts.mfilt.rtx)
+GCB_Bulk.counts.mfilt.herv <- GCB_Bulk.counts.herv[rowSums(GCB_Bulk.counts.herv) > cutoff.count, ]
+GCB_Bulk.counts.mfilt.l1 <- GCB_Bulk.counts.l1[rowSums(GCB_Bulk.counts.l1) > cutoff.count, ]
+
+GCB_Bulk.filt.tx <- GCB_Bulk.counts.tx[rowSums(GCB_Bulk.counts.tx > cutoff.count) > cutoff.samp, ]
+GCB_Bulk.filt.rtx <- GCB_Bulk.counts.rtx[rowSums(GCB_Bulk.counts.rtx > cutoff.count) > cutoff.samp, ]
+GCB_Bulk.filt.comb <- rbind(GCB_Bulk.filt.tx, GCB_Bulk.filt.rtx)
+GCB_Bulk.filt.herv <- GCB_Bulk.counts.herv[rowSums(GCB_Bulk.counts.herv > cutoff.count) > cutoff.samp, ]
+GCB_Bulk.filt.l1 <- GCB_Bulk.counts.l1[rowSums(GCB_Bulk.counts.l1 > cutoff.count) >cutoff.samp, ]
+
+
 ################################ SANITY CHECK ##################################
 
 ## Count the number of genes, HERVs, and L1s 
@@ -165,6 +193,12 @@ cat(sprintf("%d combined genes FL\n", nrow(FL.filt.comb)))
 cat(sprintf("%d HERV in FL\n", nrow(FL.filt.herv)))
 cat(sprintf("%d L1 in FL\n\n", nrow(FL.filt.l1)))
 
+cat(sprintf("%d genes in GCB Bulk\n", nrow(GCB_Bulk.filt.tx)))
+cat(sprintf("%d retro genes in GCB Bulk\n", nrow(GCB_Bulk.filt.rtx)))
+cat(sprintf("%d combined genes FL\n", nrow(GCB_Bulk.filt.comb)))
+cat(sprintf("%d HERV in GCB Bulk\n", nrow(GCB_Bulk.filt.herv)))
+cat(sprintf("%d L1 in GCB Bulk\n\n", nrow(GCB_Bulk.filt.l1)))
+
 ################################## SAVE FILES ##################################
 
 save(all.counts.filt.comb, all.counts.filt.tx, all.counts.filt.rtx, 
@@ -194,4 +228,11 @@ save(FL.filt.comb, FL.filt.tx, FL.filt.rtx,
      FL.counts.mfilt.comb, FL.counts.mfilt.herv,
      FL.counts.mfilt.l1,
      file="r_outputs/02-FL_filt_counts.Rdata")
+
+save(GCB_Bulk.filt.comb, GCB_Bulk.filt.tx, GCB_Bulk.filt.rtx, 
+     GCB_Bulk.filt.herv, GCB_Bulk.filt.l1, bulk_metadata, 
+     GCB_Bulk.counts.mfilt.comb, GCB_Bulk.counts.mfilt.tx,
+     GCB_Bulk.counts.mfilt.rtx, GCB_Bulk.counts.mfilt.herv, 
+     GCB_Bulk.counts.mfilt.l1,
+     file="r_outputs/02-GCB_Bulk_filt_counts.Rdata")
 
