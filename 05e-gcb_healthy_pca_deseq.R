@@ -23,6 +23,7 @@ library(edgeR)
 library(ashr)
 library(cowplot)
 library(wesanderson)
+library(UpSetR)
 
 ################################### LOAD DATA ##################################
 
@@ -85,7 +86,7 @@ stopifnot(all(colnames(bulk.countdat) == rownames(bulk_metadata)))
 
 GCB.dds <- DESeq2::DESeqDataSetFromMatrix(countData = bulk.countdat,
                                             colData = bulk_metadata,
-                                            design = ~ Cell_type)
+                                            design = ~ Cell_type + 0)
 
 GCB.dds <- DESeq2::DESeq(GCB.dds, parallel=T)
 GCB.tform <- DESeq2::varianceStabilizingTransformation(GCB.dds, blind=FALSE)
@@ -102,7 +103,7 @@ GCB.herv.pca.obj <-
 
 ######################## GCB BULK DESEQ (HERVS + GENES) ########################
 
-### DESeq2 (HERVs Only)
+### DESeq2 (HERVs + Genes)
 
 bulk.g.countdat <- GCB_Bulk.filt.comb
 cat(sprintf('%d variables\n', nrow(bulk.g.countdat)))
@@ -163,16 +164,112 @@ biplot(GCB.herv.pca.obj,
 
 fc=2 # fold change
 l2fc=log2(fc) # log 2 fold change
+lfc.cutoff <- 1.5
 pval=0.05 # p value threshold
 
-gcb_res <- res <- list(
+############################## TOP GENES & HERVS ###############################
+
+gcb_res <- list(
   "DZ" = DESeq2::results(GCB.g.dds, contrast=c(+1, -1/4, -1/4, -1/4, -1/4), alpha=pval),
   "GCB" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, +1, -1/4, -1/4, -1/4), alpha=pval),
   "LZ" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, -1/4, +1, -1/4, -1/4), alpha=pval),
   "MB" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, -1/4, -1/4, +1, -1/4), alpha=pval),
   "NB" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, -1/4, -1/4, -1/4, 1), alpha=pval),
-  "DZvLZ" = DESeq2::results(GCB.g.dds, contrast=c(+1, 0, +1, 0, 0), alpha=pval)
+  "DZvLZ" = DESeq2::results(GCB.g.dds, contrast=c(+1, 0, +1, 0, 0), alpha=pval),
+  "MBvsNB" = DESeq2::results(GCB.g.dds, contrast=c(0, 0, 0, +1, +1), alpha=pval)
 )
 
-gcb_res$DZvLZ
+gcb_res <- lapply(gcb_res, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+sig <- lapply(gcb_res, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+for (n in names(sig)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig[[n]])
+}
+
+############################### TOP HERVs ONLY #################################
+
+gcb_res_herv <- list(
+  "DZ" = DESeq2::results(GCB.dds, contrast=c(+1, -1/4, -1/4, -1/4, -1/4), alpha=pval),
+  "GCB" = DESeq2::results(GCB.dds, contrast=c(-1/4, +1, -1/4, -1/4, -1/4), alpha=pval),
+  "LZ" = DESeq2::results(GCB.dds, contrast=c(-1/4, -1/4, +1, -1/4, -1/4), alpha=pval),
+  "MB" = DESeq2::results(GCB.dds, contrast=c(-1/4, -1/4, -1/4, +1, -1/4), alpha=pval),
+  "NB" = DESeq2::results(GCB.dds, contrast=c(-1/4, -1/4, -1/4, -1/4, 1), alpha=pval),
+  "DZvLZ" = DESeq2::results(GCB.dds, contrast=c(+1, 0, +1, 0, 0), alpha=pval),
+  "MBvsNB" = DESeq2::results(GCB.dds, contrast=c(0, 0, 0, +1, +1), alpha=pval)
+)
+
+gcb_res_herv <- lapply(gcb_res_herv, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+
+sig_herv <- lapply(gcb_res_herv, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+
+for (n in names(sig_herv)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig_herv[[n]])
+}
+
+############################ UPSET GENES & HERVS ###############################
+
+upvars <- lapply(sig[1:5], function(r) rownames(subset(r, log2FoldChange>0)))
+downvars <- lapply(sig[1:5], function(r) rownames(subset(r, log2FoldChange<0)))
+
+upset(fromList(upvars), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F)
+
+upset(fromList(downvars), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F)
+
+up.binmat <- fromList(upvars)
+rn <- do.call(c, upvars)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat) <- rn
+rm(rn)
+
+dn.binmat <- fromList(downvars)
+rn <- do.call(c, downvars)
+rn <- rn[!duplicated(rn)]
+rownames(dn.binmat) <- rn
+rm(rn)
+
+############################# UPSET HERVs ONLY #################################
+
+upvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldChange>0)))
+downvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldChange<0)))
+
+upset(fromList(upvars_hervs), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F)
+
+upset(fromList(downvars_hervs), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F)
+
+up.binmat.hervs <- fromList(upvars_hervs)
+rn <- do.call(c, upvars_hervs)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat.hervs) <- rn
+rm(rn)
+
+dn.binmat.hervs <- fromList(downvars_hervs)
+rn <- do.call(c, downvars_hervs)
+rn <- rn[!duplicated(rn)]
+rownames(dn.binmat.hervs) <- rn
+rm(rn)
+
+
 
