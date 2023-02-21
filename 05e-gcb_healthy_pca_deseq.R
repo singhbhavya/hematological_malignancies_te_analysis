@@ -133,6 +133,7 @@ GCB.g.pca.obj <-
 
 ## Biplot with projects (HERVs and genes)
 
+pdf("plots/05e-gcb_pca_genes_hervs.pdf", height=5, width=6)
 biplot(GCB.g.pca.obj, 
        lab = NULL,
        showLoadings = FALSE,
@@ -150,8 +151,11 @@ biplot(GCB.g.pca.obj,
                   "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[4],
                   "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[5]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+dev.off()
 
+pdf("plots/05e-gcb_pca_hervs.pdf", height=5, width=6)
 ## Biplot with projects (HERVs only)
 biplot(GCB.herv.pca.obj, 
        lab = NULL,
@@ -170,7 +174,9 @@ biplot(GCB.herv.pca.obj,
                   "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[4],
                   "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[5]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+dev.off()
 
 ################################ SET THRESHOLDS ################################
 
@@ -181,14 +187,20 @@ pval=0.001 # p value threshold
 
 ############################## TOP GENES & HERVS ###############################
 
+# resultsNames(GCB.g.dds)
+# [1] "Cell_typeDark.Zone.Germinal.Center.B"  "Cell_typeGerminal.Center.B"           
+# [3] "Cell_typeLight.Zone.Germinal.Center.B" "Cell_typeMemory.B"                    
+# [5] "Cell_typeNaive.B"   
+
 gcb_res <- list(
   "DZ" = DESeq2::results(GCB.g.dds, contrast=c(+1, -1/4, -1/4, -1/4, -1/4), alpha=pval),
   "GCB" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, +1, -1/4, -1/4, -1/4), alpha=pval),
   "LZ" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, -1/4, +1, -1/4, -1/4), alpha=pval),
   "MB" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, -1/4, -1/4, +1, -1/4), alpha=pval),
   "NB" = DESeq2::results(GCB.g.dds, contrast=c(-1/4, -1/4, -1/4, -1/4, 1), alpha=pval),
-  "DZvLZ" = DESeq2::results(GCB.g.dds, contrast=c(+1, 0, +1, 0, 0), alpha=pval),
-  "MBvsNB" = DESeq2::results(GCB.g.dds, contrast=c(0, 0, 0, +1, +1), alpha=pval)
+  "DZvLZ" = DESeq2::results(GCB.g.dds, contrast=c("Cell_type", "Dark Zone Germinal Center B", 
+                                                  "Light Zone Germinal Center B"), alpha=pval),
+  "MBvsNB" = DESeq2::results(GCB.g.dds, contrast=c("Cell_type", "Memory B", "Naive B"), alpha=pval)
 )
 
 gcb_res <- lapply(gcb_res, function(r) {
@@ -215,8 +227,9 @@ gcb_res_herv <- list(
   "LZ" = DESeq2::results(GCB.dds, contrast=c(-1/4, -1/4, +1, -1/4, -1/4), alpha=pval),
   "MB" = DESeq2::results(GCB.dds, contrast=c(-1/4, -1/4, -1/4, +1, -1/4), alpha=pval),
   "NB" = DESeq2::results(GCB.dds, contrast=c(-1/4, -1/4, -1/4, -1/4, 1), alpha=pval),
-  "DZvLZ" = DESeq2::results(GCB.dds, contrast=c(+1, 0, +1, 0, 0), alpha=pval),
-  "MBvsNB" = DESeq2::results(GCB.dds, contrast=c(0, 0, 0, +1, +1), alpha=pval)
+  "DZvLZ" = DESeq2::results(GCB.dds, contrast=c("Cell_type", "Dark Zone Germinal Center B", 
+                                                "Light Zone Germinal Center B"), alpha=pval),
+  "MBvsNB" = DESeq2::results(GCB.dds, contrast=c("Cell_type", "Memory B", "Naive B"), alpha=pval)
 )
 
 gcb_res_herv <- lapply(gcb_res_herv, function(r) {
@@ -242,11 +255,15 @@ for (n in names(sig_herv)) {
 upvars <- lapply(sig[1:5], function(r) rownames(subset(r, log2FoldChange>0)))
 downvars <- lapply(sig[1:5], function(r) rownames(subset(r, log2FoldChange<0)))
 
+pdf("plots/05e-gcb_upset_upvars.pdf", height=5, width=7)
 upset(fromList(upvars), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
       keep.order = T, order.by='degree', decreasing=F)
+dev.off()
 
+pdf("plots/05e-gcb_upset_dnwars.pdf", height=5, width=7)
 upset(fromList(downvars), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
       keep.order = T, order.by='degree', decreasing=F)
+dev.off()
 
 up.binmat <- fromList(upvars)
 rn <- do.call(c, upvars)
@@ -265,11 +282,15 @@ rm(rn)
 upvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldChange>0)))
 downvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldChange<0)))
 
+pdf("plots/05e-gcb_upset_upvars_hervs.pdf", height=5, width=7)
 upset(fromList(upvars_hervs), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
       keep.order = T, order.by='degree', decreasing=F)
+dev.off()
 
+pdf("plots/05e-gcb_upset_dnvars_hervs.pdf", height=5, width=7)
 upset(fromList(downvars_hervs), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
       keep.order = T, order.by='degree', decreasing=F)
+dev.off()
 
 up.binmat.hervs <- fromList(upvars_hervs)
 rn <- do.call(c, upvars_hervs)
@@ -304,6 +325,7 @@ annoCol <- list(Cell_type = annoCol)
 top.genes.hervs <- rownames(up.binmat)
 top.hervs <- rownames(up.binmat.hervs)
 
+pdf("plots/05e-gcb_top_hervs_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(GCB.tform)[top.hervs,], 
          main="Upregulated HERVs, all clusters",
          cluster_rows=TRUE,
@@ -317,7 +339,9 @@ pheatmap(assay(GCB.tform)[top.hervs,],
          treeheight_row=0,
          annotation_col=df,
          annotation_colors = annoCol)
+dev.off()
 
+pdf("plots/05e-gcb_top_hervs_genes_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(GCB.g.tform)[top.genes.hervs,],
          main="Upregulated Genes and HERVs, all clusters",
          cluster_rows=TRUE,
@@ -331,6 +355,7 @@ pheatmap(assay(GCB.g.tform)[top.genes.hervs,],
          treeheight_row=0,
          annotation_col=df,
          annotation_colors = annoCol)
+dev.off()
 
 
 ########################### DE HERVs PER GC SITE ###############################
@@ -372,37 +397,61 @@ makeheatmap <- function(topgenes, ...) {
 for(clust in c("DZ", "GCB", "LZ", "MB", "NB")) {
   tg <- rownames(sig_herv[[clust]][1:75,])
   p <- makeheatmap(tg, main=paste0('DE in cluster ', clust))
+  pdf(paste0("plots/05e-gcb_top_de_hervs_", clust, ".pdf"), height=7, width=7)
   print(p)
+  dev.off()
 }
 
 ############################# VOLCANO DZ VS LZ #################################
 
+pdf("plots/05e-gcb_volcano_DZ_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$DZ,
                 lab = rownames(sig_herv$DZ),
                 x = 'log2FoldChange',
-                y = 'pvalue')
+                y = 'pvalue',
+                title = 'All vs DZ')
+dev.off()
 
+pdf("plots/05e-gcb_volcano_LZ_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$LZ,
                 lab = rownames(sig_herv$LZ),
                 x = 'log2FoldChange',
-                y = 'pvalue')
+                y = 'pvalue',
+                title = 'All vs LZ')
+dev.off()
 
+pdf("plots/05e-gcb_volcano_NB_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$NB,
                 lab = rownames(sig_herv$NB),
                 x = 'log2FoldChange',
-                y = 'pvalue')
+                y = 'pvalue',
+                title = 'All vs NB')
+dev.off()
 
+pdf("plots/05e-gcb_volcano_MB_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$MB,
                 lab = rownames(sig_herv$MB),
                 x = 'log2FoldChange',
-                y = 'pvalue')
+                y = 'pvalue',
+                title = 'All vs MB')
+dev.off()
 
+pdf("plots/05e-gcb_volcano_DZ_v_LZ.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$DZvLZ,
                 lab = rownames(sig_herv$DZvLZ),
                 x = 'log2FoldChange',
-                y = 'pvalue')
+                y = 'pvalue',
+                title = 'LZ vs DZ')
+dev.off()
 
 
+pdf("plots/05e-gcb_volcano_NB_v_MB.pdf", height=8, width=8)
+EnhancedVolcano(sig_herv$MBvsNB,
+                lab = rownames(sig_herv$MBvsNB),
+                x = 'log2FoldChange',
+                y = 'pvalue',
+                title = 'NB vs MB')
+dev.off()
 ########################## PLOT INDIVIDUAL HERVs ###############################
 
 plot.counts <- function(df, gene) {
@@ -435,17 +484,21 @@ plot.counts <- function(df, gene) {
 }
 
 
-plot.counts(GCB.g.dds, "HML2_3q12.3")
-plot.counts(GCB.g.dds, "ERV316A3_6p21.33c")
-plot.counts(GCB.g.dds, "MER4_17q21.2d")
-plot.counts(GCB.g.dds, "HML3_5p15.33d")
-plot.counts(GCB.g.dds, "HERVEA_5q22.2")
-plot.counts(GCB.g.dds, "HERVH_7q11.21")
-plot.counts(GCB.g.dds, "HERVH_1q32.1b")
-plot.counts(GCB.g.dds, "HERVW_1q32.1")
-plot.counts(GCB.g.dds, "HML5_1q22")
+p1 <- plot.counts(GCB.g.dds, "HML2_3q12.3")
+p2 <- plot.counts(GCB.g.dds, "ERV316A3_6p21.33c")
+p3 <- plot.counts(GCB.g.dds, "MER4_17q21.2d")
+p4 <- plot.counts(GCB.g.dds, "HML3_5p15.33d")
+p5 <- plot.counts(GCB.g.dds, "HERVEA_5q22.2")
+p6 <- plot.counts(GCB.g.dds, "HERVH_7q11.21")
+p7 <- plot.counts(GCB.g.dds, "HERVH_1q32.1b")
+p8 <- plot.counts(GCB.g.dds, "HERVW_1q32.1")
+p9 <- plot.counts(GCB.g.dds, "HML5_1q22")
 
-
-
+pdf("plots/05e-gcb_individual_hervs.pdf", height=12, width=12)
+plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9,
+          nrow = 3, 
+          ncol = 3,
+          labels = "AUTO")
+dev.off()
                        
                        
