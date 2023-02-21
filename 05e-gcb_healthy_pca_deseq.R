@@ -19,11 +19,13 @@ library(PCAtools)
 library(DESeq2)
 library(ggplot2)
 library(ggsci)
+library(ggpubr)
 library(edgeR)
 library(ashr)
 library(cowplot)
 library(wesanderson)
 library(UpSetR)
+library(EnhancedVolcano)
 
 ################################### LOAD DATA ##################################
 
@@ -142,13 +144,18 @@ biplot(GCB.g.pca.obj,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
        colby = "Cell_type",
+       colkey = c("Naive B" = pal_jco("default", alpha = 0.7)(5)[1],
+                  "Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[2],
+                  "Memory B" = pal_jco("default", alpha = 0.7)(5)[3],
+                  "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[4],
+                  "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[5]),
        legendPosition = "right")  +
   theme_cowplot()
 
 ## Biplot with projects (HERVs only)
 biplot(GCB.herv.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 2, 
@@ -157,6 +164,11 @@ biplot(GCB.herv.pca.obj,
        lengthLoadingsArrowsFactor = 1.5,
        drawConnectors = TRUE,
        colby = "Cell_type",
+       colkey = c("Naive B" = pal_jco("default", alpha = 0.7)(5)[1],
+                  "Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[2],
+                  "Memory B" = pal_jco("default", alpha = 0.7)(5)[3],
+                  "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[4],
+                  "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[5]),
        legendPosition = "right")  +
   theme_cowplot()
 
@@ -165,7 +177,7 @@ biplot(GCB.herv.pca.obj,
 fc=2 # fold change
 l2fc=log2(fc) # log 2 fold change
 lfc.cutoff <- 1.5
-pval=0.05 # p value threshold
+pval=0.001 # p value threshold
 
 ############################## TOP GENES & HERVS ###############################
 
@@ -271,5 +283,169 @@ rn <- rn[!duplicated(rn)]
 rownames(dn.binmat.hervs) <- rn
 rm(rn)
 
+################################# HEATMAPS #####################################
+
+################################### SETUP ######################################
+
+# Colors for cells
+cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
+
+# Annotation column
+df <- as.data.frame(colData(GCB.dds)[,c("BioSample","Cell_type")])
+df <- subset(df, select = -c(1))
+
+# Create colors for each group
+annoCol <-  pal_jco("default", alpha = 0.7)(5)
+names(annoCol) <- unique(df$Cell_type)
+annoCol <- list(Cell_type = annoCol)
+
+######################### UPREGULATED IN ALL GROUPS ############################
+
+top.genes.hervs <- rownames(up.binmat)
+top.hervs <- rownames(up.binmat.hervs)
+
+pheatmap(assay(GCB.tform)[top.hervs,], 
+         main="Upregulated HERVs, all clusters",
+         cluster_rows=TRUE,
+         show_rownames=FALSE,
+         show_colnames = FALSE,
+         color = cols,
+         scale="row",
+         breaks=seq(-3,3,length.out=14),
+         labels_row = gene_table[top.hervs,]$display,
+         cluster_cols=TRUE, 
+         treeheight_row=0,
+         annotation_col=df,
+         annotation_colors = annoCol)
+
+pheatmap(assay(GCB.g.tform)[top.genes.hervs,],
+         main="Upregulated Genes and HERVs, all clusters",
+         cluster_rows=TRUE,
+         show_rownames=FALSE,
+         show_colnames = FALSE,
+         color = cols,
+         scale="row",
+         breaks=seq(-3,3,length.out=14),
+         labels_row = gene_table[top.genes.hervs,]$display,
+         cluster_cols=TRUE, 
+         treeheight_row=0,
+         annotation_col=df,
+         annotation_colors = annoCol)
 
 
+########################### DE HERVs PER GC SITE ###############################
+
+
+makeheatmap <- function(topgenes, ...) {
+  args <- list(...)
+  mat <- assay(GCB.tform)[unique(topgenes), ]
+  rowdist <- as.dist((1 - cor(t(mat), method='spearman'))/2)
+  
+  annotation_col <- df
+  cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
+  
+  annotation_row <- data.frame(
+    row.names = rownames(mat),
+    Group=retro.annot[rownames(mat),]$family,
+    Chrom=retro.annot[rownames(mat),]$chrom
+  )
+  
+  pheatmap(mat,
+           color=cols,
+           scale="row", breaks=seq(-3,3,length.out=14),
+           clustering_distance_rows = rowdist,
+           clustering_method="average",
+           annotation_col = df,
+           annotation_colors = annoCol,
+           show_colnames=F, 
+           show_rownames = T,
+           fontsize = 8, fontsize_row = 6, border_color = NA,
+           legend=T,
+           treeheight_col=10,
+           treeheight_row=10, 
+           cutree_cols=4,
+           ...
+  )
+}
+
+
+for(clust in c("DZ", "GCB", "LZ", "MB", "NB")) {
+  tg <- rownames(sig_herv[[clust]][1:75,])
+  p <- makeheatmap(tg, main=paste0('DE in cluster ', clust))
+  print(p)
+}
+
+############################# VOLCANO DZ VS LZ #################################
+
+EnhancedVolcano(sig_herv$DZ,
+                lab = rownames(sig_herv$DZ),
+                x = 'log2FoldChange',
+                y = 'pvalue')
+
+EnhancedVolcano(sig_herv$LZ,
+                lab = rownames(sig_herv$LZ),
+                x = 'log2FoldChange',
+                y = 'pvalue')
+
+EnhancedVolcano(sig_herv$NB,
+                lab = rownames(sig_herv$NB),
+                x = 'log2FoldChange',
+                y = 'pvalue')
+
+EnhancedVolcano(sig_herv$MB,
+                lab = rownames(sig_herv$MB),
+                x = 'log2FoldChange',
+                y = 'pvalue')
+
+EnhancedVolcano(sig_herv$DZvLZ,
+                lab = rownames(sig_herv$DZvLZ),
+                x = 'log2FoldChange',
+                y = 'pvalue')
+
+
+########################## PLOT INDIVIDUAL HERVs ###############################
+
+plot.counts <- function(df, gene) {
+  
+  as.data.frame(plotCounts(df, 
+                           gene=gene, 
+                           intgroup="Cell_type", 
+                           returnData = TRUE)) %>%
+    ggplot(aes(x=Cell_type, y=count, fill=Cell_type))  +
+    geom_boxplot() +
+    theme_pubr() +
+    theme(legend.position="none",
+          axis.text.x = element_text(angle=45, hjust=1)) +
+    xlab("Cell Type") +
+    ylab("Counts") +
+    scale_x_discrete(labels=c("Dark Zone Germinal Center B" = "DZ",
+                              "Germinal Center B" = "GCB",
+                              "Light Zone Germinal Center B" = "LZ",
+                              "Memory B" = "MB",
+                              "Naive B" = "NB")) +
+    scale_fill_manual(values = c("Naive B" = pal_jco("default", alpha = 0.7)(5)[1],
+                                 "Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[2],
+                                 "Memory B" = pal_jco("default", alpha = 0.7)(5)[3],
+                                 "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[4],
+                                 "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[5])) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
+    ggtitle(gene) + 
+    theme(plot.title = element_text(hjust = 0.5),
+          aspect.ratio = 1)
+}
+
+
+plot.counts(GCB.g.dds, "HML2_3q12.3")
+plot.counts(GCB.g.dds, "ERV316A3_6p21.33c")
+plot.counts(GCB.g.dds, "MER4_17q21.2d")
+plot.counts(GCB.g.dds, "HML3_5p15.33d")
+plot.counts(GCB.g.dds, "HERVEA_5q22.2")
+plot.counts(GCB.g.dds, "HERVH_7q11.21")
+plot.counts(GCB.g.dds, "HERVH_1q32.1b")
+plot.counts(GCB.g.dds, "HERVW_1q32.1")
+plot.counts(GCB.g.dds, "HML5_1q22")
+
+
+
+                       
+                       
