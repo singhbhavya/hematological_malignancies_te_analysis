@@ -25,6 +25,7 @@ load("r_outputs/01-DLBCL_counts.Rdata")
 load("r_outputs/01-BL_counts.Rdata")
 load("r_outputs/01-FL_counts.Rdata")
 load("r_outputs/01-GCB_Bulk_counts.Rdata")
+load("r_outputs/01-GCB_Agirre.Rdata")
 
 ################################ SANITY CHECK ##################################
 
@@ -61,6 +62,12 @@ cat(sprintf("%d retro genes in GCB Bulk\n", nrow(GCB_Bulk.counts.rtx)))
 cat(sprintf("%d combined genes GCB Bulk\n", nrow(GCB_Bulk.counts.comb)))
 cat(sprintf("%d HERV in GCB Bulk\n", nrow(GCB_Bulk.counts.herv)))
 cat(sprintf("%d L1 in GCB Bulk\n", nrow(GCB_Bulk.counts.l1)))
+
+cat(sprintf("%d genes in GCB Agirre\n", nrow(GCB_Agirre.counts.tx)))
+cat(sprintf("%d retro genes in GCB Agirre\n", nrow(GCB_Agirre.counts.rtx)))
+cat(sprintf("%d combined genes GCB Agirre\n", nrow(GCB_Agirre.counts.comb)))
+cat(sprintf("%d HERV in GCB Agirre\n", nrow(GCB_Agirre.counts.herv)))
+cat(sprintf("%d L1 in GCB Agirre\n", nrow(GCB_Agirre.counts.l1)))
 
 ############################## FILTER ALL DATA #################################
 
@@ -162,6 +169,25 @@ GCB_Bulk.filt.comb <- rbind(GCB_Bulk.filt.tx, GCB_Bulk.filt.rtx)
 GCB_Bulk.filt.herv <- GCB_Bulk.counts.herv[rowSums(GCB_Bulk.counts.herv > cutoff.count) > cutoff.samp, ]
 GCB_Bulk.filt.l1 <- GCB_Bulk.counts.l1[rowSums(GCB_Bulk.counts.l1 > cutoff.count) >cutoff.samp, ]
 
+############################## FILTER GCB Agirre ###############################
+
+# Minimum count threshold
+cutoff.count <- 5
+
+# Minimum number of samples meeting the minimum count threshold
+cutoff.samp <- floor(ncol(GCB_Agirre.counts.comb) * 0.1)
+
+GCB_Agirre.counts.mfilt.tx <- GCB_Agirre.counts.tx[rowSums(GCB_Agirre.counts.tx) > cutoff.count, ]
+GCB_Agirre.counts.mfilt.rtx <- GCB_Agirre.counts.rtx[rowSums(GCB_Agirre.counts.rtx) > cutoff.count, ]
+GCB_Agirre.counts.mfilt.comb <- rbind(GCB_Agirre.counts.mfilt.tx, GCB_Agirre.counts.mfilt.rtx)
+GCB_Agirre.counts.mfilt.herv <- GCB_Agirre.counts.herv[rowSums(GCB_Agirre.counts.herv) > cutoff.count, ]
+GCB_Agirre.counts.mfilt.l1 <- GCB_Agirre.counts.l1[rowSums(GCB_Agirre.counts.l1) > cutoff.count, ]
+
+GCB_Agirre.filt.tx <- GCB_Agirre.counts.tx[rowSums(GCB_Agirre.counts.tx > cutoff.count) > cutoff.samp, ]
+GCB_Agirre.filt.rtx <- GCB_Agirre.counts.rtx[rowSums(GCB_Agirre.counts.rtx > cutoff.count) > cutoff.samp, ]
+GCB_Agirre.filt.comb <- rbind(GCB_Agirre.filt.tx, GCB_Agirre.filt.rtx)
+GCB_Agirre.filt.herv <- GCB_Agirre.counts.herv[rowSums(GCB_Agirre.counts.herv > cutoff.count) > cutoff.samp, ]
+GCB_Agirre.filt.l1 <- GCB_Agirre.counts.l1[rowSums(GCB_Agirre.counts.l1 > cutoff.count) >cutoff.samp, ]
 
 ################################ SANITY CHECK ##################################
 
@@ -195,9 +221,15 @@ cat(sprintf("%d L1 in FL\n\n", nrow(FL.filt.l1)))
 
 cat(sprintf("%d genes in GCB Bulk\n", nrow(GCB_Bulk.filt.tx)))
 cat(sprintf("%d retro genes in GCB Bulk\n", nrow(GCB_Bulk.filt.rtx)))
-cat(sprintf("%d combined genes FL\n", nrow(GCB_Bulk.filt.comb)))
+cat(sprintf("%d combined genes GCB Bulk\n", nrow(GCB_Bulk.filt.comb)))
 cat(sprintf("%d HERV in GCB Bulk\n", nrow(GCB_Bulk.filt.herv)))
 cat(sprintf("%d L1 in GCB Bulk\n\n", nrow(GCB_Bulk.filt.l1)))
+
+cat(sprintf("%d genes in GCB Agirre\n", nrow(GCB_Agirre.filt.tx)))
+cat(sprintf("%d retro genes in GCB Agirre\n", nrow(GCB_Agirre.filt.rtx)))
+cat(sprintf("%d combined genes Agirre\n", nrow(GCB_Agirre.filt.comb)))
+cat(sprintf("%d HERV in GCB Agirre\n", nrow(GCB_Agirre.filt.herv)))
+cat(sprintf("%d L1 in GCB Agirre\n\n", nrow(GCB_Agirre.filt.l1)))
 
 ################################## SAVE FILES ##################################
 
@@ -235,4 +267,11 @@ save(GCB_Bulk.filt.comb, GCB_Bulk.filt.tx, GCB_Bulk.filt.rtx,
      GCB_Bulk.counts.mfilt.rtx, GCB_Bulk.counts.mfilt.herv, 
      GCB_Bulk.counts.mfilt.l1,
      file="r_outputs/02-GCB_Bulk_filt_counts.Rdata")
+
+save(GCB_Agirre.filt.comb, GCB_Agirre.filt.tx, GCB_Agirre.filt.rtx, 
+     GCB_Agirre.filt.herv, GCB_Agirre.filt.l1, agirre_metadata, 
+     GCB_Agirre.counts.mfilt.comb, GCB_Agirre.counts.mfilt.tx,
+     GCB_Agirre.counts.mfilt.rtx, GCB_Agirre.counts.mfilt.herv, 
+     GCB_Agirre.counts.mfilt.l1,
+     file="r_outputs/02-GCB_Agirre_filt_counts.Rdata")
 

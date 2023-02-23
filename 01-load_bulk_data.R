@@ -433,6 +433,8 @@ all.counts.comb <- rbind(all.counts.tx, all.counts.rtx)
 GCB_Bulk.counts.comb <- rbind(GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx)
 GCB_Agirre.counts.comb <- rbind(GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx)
 
+
+
 ############################# SUBSET HERVs and L1s #############################
 
 retro.hg38.v1 <- retro.hg38.v1 %>% remove_rownames %>% column_to_rownames(var="locus")
@@ -469,7 +471,7 @@ save(FL.counts.comb, FL.counts.tx, FL.counts.rtx, FL.counts.herv,
 save(GCB_Bulk.counts.comb, GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx, GCB_Bulk.counts.herv, 
      GCB_Bulk.counts.l1, bulk_metadata, file="r_outputs/01-GCB_Bulk_counts.Rdata")
 
-save(GCB_Agirre.counts.comb, GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx, GCB_Bulk.counts.herv,
+save(GCB_Agirre.counts.comb, GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx, GCB_Agirre.counts.herv,
      GCB_Agirre.counts.l1, agirre_metadata, file="r_outputs/01-GCB_Agirre.Rdata")
 
 save(all_metadata, DLBCL_metadata, BL_metadata, FL_metadata, bulk_metadata,
