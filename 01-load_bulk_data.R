@@ -289,6 +289,12 @@ bulk_metadata <- read.csv("metadata/GCB/GCB_Bulk.csv",
 
 rownames(bulk_metadata) <- bulk_metadata$BioSample
 bulk_metadata$cancer_type <- "GCB_Bulk"
+
+agirre_metadata <- read.csv("metadata/GCB_Agirre/SraRunTable_Agirre.csv",
+                           header = TRUE)
+
+rownames(agirre_metadata) <- agirre_metadata$BioSample
+agirre_metadata$cancer_type <- "GCB_Agirre"
   
 ################################ LOAD TELESCOPE ################################
 
@@ -341,6 +347,7 @@ load_all_lymphoma_new <- function(df) {
 load_all_lymphoma_new(BL_metadata)
 load_all_lymphoma_new(FL_metadata)
 load_all_lymphoma_new(bulk_metadata)
+load_all_lymphoma_new(agirre_metadata)
 
 
 ################################## LOAD STAR ###################################
@@ -349,11 +356,13 @@ DLBCL_files <- Sys.glob(file.path("results/DLBCL/star_alignment/*", '*.ReadsPerG
 BL_files <- Sys.glob(file.path("results/BL/star_alignment/*", '*.ReadsPerGene.out.tab'))
 FL_files <- Sys.glob(file.path("results/FL/star_alignment/*", '*.ReadsPerGene.out.tab'))
 GCB_Buk_files <- Sys.glob(file.path("results/GCB_Bulk/star_alignment/*", '*.ReadsPerGene.out.tab'))
+GCB_Agirre_fules <- Sys.glob(file.path("results/GCB_Agirre/star_alignment/*", '*.ReadsPerGene.out.tab'))
 
 DLBCL.counts.tx <- load_star_counts(DLBCL_files)
 BL.counts.tx <- load_star_counts(BL_files)
 FL.counts.tx <- load_star_counts(FL_files)
 GCB_Bulk.counts.tx <- load_star_counts(GCB_Buk_files)
+GCB_Agirre.counts.tx <- load_star_counts(GCB_Agirre_fules)
 
 ################################# SANITY CHECK #################################
 
@@ -361,6 +370,7 @@ stopifnot(all(rownames(DLBCL.counts.rtx) == retro.hg38.v1$locus))
 stopifnot(all(rownames(BL.counts.rtx) == retro.hg38.v1$locus))
 stopifnot(all(rownames(FL.counts.rtx) == retro.hg38.v1$locus))
 stopifnot(all(rownames(GCB_Bulk.counts.rtx) == retro.hg38.v1$locus))
+stopifnot(all(rownames(GCB_Agirre.counts.rtx) == retro.hg38.v1$locus))
 
 ########################### ORDER SAMPLES / METADATA ###########################
 
@@ -377,6 +387,9 @@ FL.counts.tx <- FL.counts.tx[,reorder_idx_counts.tx]
 reorder_idx_counts.tx <- match(rownames(bulk_metadata), colnames(GCB_Bulk.counts.tx))
 GCB_Bulk.counts.tx <- GCB_Bulk.counts.tx[,reorder_idx_counts.tx]
 
+reorder_idx_counts.tx <- match(rownames(agirre_metadata), colnames(GCB_Agirre.counts.tx))
+GCB_Agirre.counts.tx <- GCB_Agirre.counts.tx[,reorder_idx_counts.tx]
+
 # reorder counts.rtx by metadata rowname
 reorder_idx_counts.rtx <- match(rownames(DLBCL_metadata), colnames(DLBCL.counts.rtx))
 DLBCL.counts.rtx <- DLBCL.counts.rtx[,reorder_idx_counts.rtx]
@@ -392,11 +405,15 @@ FL.counts.tx <- FL.counts.tx[,reorder_idx_counts.tx]
 reorder_idx_counts.rtx <- match(rownames(bulk_metadata), colnames(GCB_Bulk.counts.rtx))
 GCB_Bulk.counts.rtx <- GCB_Bulk.counts.rtx[,reorder_idx_counts.rtx]
 
+reorder_idx_counts.rtx <- match(rownames(agirre_metadata), colnames(GCB_Agirre.counts.rtx))
+GCB_Agirre.counts.rtx <- GCB_Agirre.counts.rtx[,reorder_idx_counts.rtx]
+
 # sanity check
 stopifnot(all(names(DLBCL.counts.tx) == names(DLBCL.counts.rtx)))
 stopifnot(all(names(BL.counts.tx) == names(BL.counts.rtx)))
 stopifnot(all(names(FL.counts.tx) == names(FL.counts.rtx)))
 stopifnot(all(names(GCB_Bulk.counts.tx) == names(GCB_Bulk.counts.rtx)))
+stopifnot(all(names(GCB_Agirre.counts.tx) == names(GCB_Agirre.counts.rtx)))
 
 ################################ COMBINE SAMPLES ###############################
 
@@ -414,6 +431,7 @@ BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
 FL.counts.comb <- rbind(FL.counts.tx, FL.counts.rtx)
 all.counts.comb <- rbind(all.counts.tx, all.counts.rtx)
 GCB_Bulk.counts.comb <- rbind(GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx)
+GCB_Agirre.counts.comb <- rbind(GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx)
 
 ############################# SUBSET HERVs and L1s #############################
 
@@ -424,12 +442,14 @@ BL.counts.herv <- BL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 FL.counts.herv <- FL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 all.counts.herv <- all.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 GCB_Bulk.counts.herv <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
+GCB_Agirre.counts.herv <- GCB_Agirre.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 
 DLBCL.counts.l1 <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 BL.counts.l1 <- BL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 FL.counts.l1 <- FL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 all.counts.l1 <- all.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 GCB_Bulk.counts.l1 <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
+GCB_Agirre.counts.l1 <- GCB_Agirre.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 
 ################################## SAVE FILES ##################################
 
@@ -449,7 +469,11 @@ save(FL.counts.comb, FL.counts.tx, FL.counts.rtx, FL.counts.herv,
 save(GCB_Bulk.counts.comb, GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx, GCB_Bulk.counts.herv, 
      GCB_Bulk.counts.l1, bulk_metadata, file="r_outputs/01-GCB_Bulk_counts.Rdata")
 
+save(GCB_Agirre.counts.comb, GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx, GCB_Bulk.counts.herv,
+     GCB_Agirre.counts.l1, agirre_metadata, file="r_outputs/01-GCB_Agirre.Rdata")
+
 save(all_metadata, DLBCL_metadata, BL_metadata, FL_metadata, bulk_metadata,
+     agirre_metadata,
      file="r_outputs/01-metadata.Rdata")
 
 save(retro.hg38.v1, retro.annot, gene_table, 
