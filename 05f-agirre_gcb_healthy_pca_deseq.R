@@ -144,7 +144,7 @@ Agirre.g.pca.obj <-
 
 ## Biplot with projects (HERVs and genes)
 
-#pdf("plots/05e-gcb_pca_genes_hervs.pdf", height=5, width=6)
+pdf("plots/05f-gcb_agirre_pca_genes_hervs.pdf", height=5, width=6)
 biplot(Agirre.g.pca.obj, 
        lab = NULL,
        showLoadings = FALSE,
@@ -165,9 +165,9 @@ biplot(Agirre.g.pca.obj,
        legendPosition = "right")  +
   theme_cowplot() +
   theme(aspect.ratio = 1)
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_pca_hervs.pdf", height=5, width=6)
+pdf("plots/05f-gcb_agirre_pca_hervs.pdf", height=5, width=6)
 ## Biplot with projects (HERVs only)
 biplot(Agirre.herv.pca.obj, 
        lab = NULL,
@@ -271,15 +271,15 @@ for (n in names(sig_herv)) {
 upvars_agirre <- lapply(sig[1:6], function(r) rownames(subset(r, log2FoldChange>0)))
 downvars_agirre <- lapply(sig[1:6], function(r) rownames(subset(r, log2FoldChange<0)))
 
-#pdf("plots/05e-gcb_upset_upvars.pdf", height=5, width=7)
+pdf("plots/05f-gcb_agirre_upvars.pdf", height=5, width=7)
 upset(fromList(upvars_agirre), sets=c("BMPC", "DZ", "LZ", "MB", "NB", "PB"),  
       keep.order = T, order.by='degree', decreasing=F)
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_upset_dnwars.pdf", height=5, width=7)
+pdf("plots/05f-gcb_agirre_upset_dnwars.pdf", height=5, width=7)
 upset(fromList(downvars_agirre), sets=c("BMPC", "DZ", "LZ", "MB", "NB", "PB"),  
       keep.order = T, order.by='degree', decreasing=F)
-#dev.off()
+dev.off()
 
 up.binmat.agirre <- fromList(upvars_agirre)
 rn <- do.call(c, upvars_agirre)
@@ -298,15 +298,15 @@ rm(rn)
 upvars_agirre_hervs <- lapply(sig_herv[1:6], function(r) rownames(subset(r, log2FoldChange>0)))
 downvars_agirre_hervs <- lapply(sig_herv[1:6], function(r) rownames(subset(r, log2FoldChange<0)))
 
-#pdf("plots/05e-gcb_upset_upvars_hervs.pdf", height=5, width=7)
+pdf("plots/05f-gcb_agirre_upset_upvars_hervs.pdf", height=5, width=7)
 upset(fromList(upvars_agirre_hervs), sets=c("BMPC", "DZ", "LZ", "MB", "NB", "PB"),  
       keep.order = T, order.by='degree', decreasing=F)
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_upset_dnvars_hervs.pdf", height=5, width=7)
+pdf("plots/05f-gcb_agirre_upset_dnvars_hervs.pdf", height=5, width=7)
 upset(fromList(downvars_agirre_hervs), sets=c("BMPC", "DZ", "LZ", "MB", "NB", "PB"),  
       keep.order = T, order.by='degree', decreasing=F)
-#dev.off()
+dev.off()
 
 up.binmat.hervs.agirre <- fromList(upvars_agirre_hervs)
 rn <- do.call(c, upvars_agirre_hervs)
@@ -344,7 +344,7 @@ annoCol <- list(Cell = annoCol)
 top.genes.hervs <- rownames(up.binmat.agirre)
 top.hervs <- rownames(up.binmat.hervs.agirre)
 
-#pdf("plots/05e-gcb_top_hervs_upregulated_all.pdf", height=10, width=10)
+pdf("plots/05f-gcb_agirre_top_hervs_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(Agirre.tform)[top.hervs,], 
          main="Upregulated HERVs, all clusters",
          cluster_rows=TRUE,
@@ -358,9 +358,9 @@ pheatmap(assay(Agirre.tform)[top.hervs,],
          treeheight_row=0,
          annotation_col=df,
          annotation_colors = annoCol)
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_top_hervs_genes_upregulated_all.pdf", height=10, width=10)
+pdf("plots/05f-gcb_agirre_top_hervs_genes_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(Agirre.g.tform)[top.genes.hervs,],
          main="Upregulated Genes and HERVs, all clusters",
          cluster_rows=TRUE,
@@ -374,7 +374,7 @@ pheatmap(assay(Agirre.g.tform)[top.genes.hervs,],
          treeheight_row=0,
          annotation_col=df,
          annotation_colors = annoCol)
-#dev.off()
+dev.off()
 
 ########################### DE HERVs PER GC SITE ###############################
 
@@ -414,80 +414,84 @@ makeheatmap <- function(topgenes, ...) {
 for(clust in c("BMPC", "DZ", "LZ", "NB", "PB")) {
   tg <- rownames(sig_herv[[clust]][1:75,])
   p <- makeheatmap(tg, main=paste0('DE in cluster ', clust))
-  #pdf(paste0("plots/05e-gcb_top_de_hervs_", clust, ".pdf"), height=7, width=7)
+  pdf(paste0("plots/05f-gcb_agirre_top_de_hervs_", clust, ".pdf"), height=7, width=7)
   print(p)
-  #dev.off()
+  dev.off()
 }
 
 for(clust in c("MB")) {
   tg <- rownames(sig_herv[[clust]][1:20,])
   p <- makeheatmap(tg, main=paste0('DE in cluster ', clust))
-  #pdf(paste0("plots/05e-gcb_top_de_hervs_", clust, ".pdf"), height=7, width=7)
+  pdf(paste0("plots/05f-gcb_agirre_top_de_hervs_", clust, ".pdf"), height=5, width=7)
   print(p)
-  #dev.off()
+  dev.off()
 }
 
 ############################# VOLCANO DZ VS LZ #################################
 
-#pdf("plots/05e-gcb_volcano_DZ_v_all.pdf", height=8, width=8)
+pdf("plots/05f-gcb_agirre_volcano_DZ_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$DZ,
                 lab = rownames(sig_herv$DZ),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'All vs DZ')
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_volcano_LZ_v_all.pdf", height=8, width=8)
+pdf("plots/05f-gcb_agirre_volcano_LZ_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$LZ,
                 lab = rownames(sig_herv$LZ),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'All vs LZ')
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_volcano_NB_v_all.pdf", height=8, width=8)
+pdf("plots/05f-gcb_agirre_volcano_NB_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$NB,
                 lab = rownames(sig_herv$NB),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'All vs NB')
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_volcano_MB_v_all.pdf", height=8, width=8)
+pdf("plots/05f-gcb_agirre_volcano_MB_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$MB,
                 lab = rownames(sig_herv$MB),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'All vs MB')
-#dev.off()
+dev.off()
 
+pdf("plots/05f-gcb_agirre_volcano_PB_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$PB,
                 lab = rownames(sig_herv$PB),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'All vs PB')
+dev.off()
 
+pdf("plots/05f-gcb_agirre_volcano_BMPC_v_all.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$BMPC,
                 lab = rownames(sig_herv$BMPC),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'All vs BMPC')
+dev.off()
 
-#pdf("plots/05e-gcb_volcano_DZ_v_LZ.pdf", height=8, width=8)
+pdf("plots/05f-gcb_agirre_volcano_DZ_v_LZ.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$DZvLZ,
                 lab = rownames(sig_herv$DZvLZ),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'LZ vs DZ')
-#dev.off()
+dev.off()
 
-#pdf("plots/05e-gcb_volcano_NB_v_MB.pdf", height=8, width=8)
+pdf("plots/05f-gcb_agirre_volcano_NB_v_MB.pdf", height=8, width=8)
 EnhancedVolcano(sig_herv$MBvsNB,
                 lab = rownames(sig_herv$MBvsNB),
                 x = 'log2FoldChange',
                 y = 'pvalue',
                 title = 'NB vs MB')
-#dev.off()
+dev.off()
 
 ########################## PLOT INDIVIDUAL HERVs ###############################
 
@@ -533,10 +537,10 @@ p7 <- plot.counts(Agirre.g.dds, "HML2_1q22")
 p8 <- plot.counts(Agirre.g.dds, "HERVIP10F_2q21.2")
 p9 <- plot.counts(Agirre.g.dds, "MER61_12q15a")
 
-#pdf("plots/05e-gcb_individual_hervs.pdf", height=12, width=12)
+pdf("plots/05f-gcb_agirre_individual_hervs.pdf", height=12, width=12)
 plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9,
           nrow = 3, 
           ncol = 3,
           labels = "AUTO")
-#dev.off()
+dev.off()
 
