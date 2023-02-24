@@ -500,5 +500,16 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9,
           ncol = 3,
           labels = "AUTO")
 dev.off()
-                       
+
+################################### SAVE DATA ##################################
+
+upvars_gcb <- upvars
+upvars_gcb_hervs <- upvars_hervs
+downvars_gcb <- downvars
+downvars_gcb_hervs <- downvars_hervs
+sig_herv_gcb <- sig_herv
+sig_gcb <- sig
+
+save(upvars_gcb, upvars_gcb_hervs, downvars_gcb, downvars_gcb_hervs,
+     sig_herv_gcb, sig_gcb, file = "r_outputs/05e-gcb_vars.Rdata")                       
                        

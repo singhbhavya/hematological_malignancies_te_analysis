@@ -544,3 +544,12 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9,
           labels = "AUTO")
 dev.off()
 
+################################### SAVE DATA ##################################
+
+
+sig_herv_agirre <- sig_herv
+sig_agirre <- sig
+
+save(upvars_agirre, upvars_agirre_hervs, downvars_agirre, downvars_agirre_hervs,
+     sig_herv_agirre, sig_agirre, file = "r_outputs/05f-agirre_vars.Rdata")
+
