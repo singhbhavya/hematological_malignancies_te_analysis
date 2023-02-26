@@ -117,7 +117,12 @@ plot(res.stabpath.c)
 
 ##################################### UPSET ####################################
 
-upset(fromList(selected_vars), sets=c('lrt', 'boruta', 'lasso.clust'), order.by = "freq")
+pdf("plots/05h-agirre_features_upset.pdf", height=5.5, width=7.5)
+upset(fromList(selected_vars), 
+      sets=c('lrt', 'boruta', 'lasso.clust'), 
+      order.by = "freq",
+      text.scale = c(1.5, 1.5, 1.3, 1.3, 1.3, 1.3))
+dev.off()
 
 ################################# FEATURE GRAPH ################################
 
@@ -126,4 +131,11 @@ rpart.fit <- rpart(y ~ . , data=data.frame(y=agirre_metadata$Cell,
                                            t(mat.sel)),
                    method = 'class')
 
+pdf("plots/05h-agirre_features_rpart.pdf", height=7, width=9)
 rpart.plot(rpart.fit, type=5, extra=1, digits=3)
+dev.off()
+
+#################################### SAVE DATA #################################
+
+save(selected_vars, mat.sel, sig_lrt, bor.model, res.stabsel.c, 
+     file="r_outputs/05h-agirre_selected_features.Rdata")
