@@ -261,10 +261,19 @@ sig_herv <- lapply(agirre_res_herv, function(r) {
   s[order(s$padj),]
 })
 
+sink(file = "r_outputs/05f-agirre_herv_deseq.txt")
 for (n in names(sig_herv)) {
   cat("\n#--- Contrast", n, "---#\n")
   summary(sig_herv[[n]])
 }
+sink(file = NULL)
+
+sink(file = "r_outputs/05f-agirre_herv_deseq_top5.txt")
+for (n in names(sig_herv)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  print(head(sig_herv[[n]]))
+}
+sink(file = NULL)
 
 ############################ UPSET GENES & HERVS ###############################
 
