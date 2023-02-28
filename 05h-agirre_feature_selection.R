@@ -135,7 +135,64 @@ pdf("plots/05h-agirre_features_rpart.pdf", height=7, width=9)
 rpart.plot(rpart.fit, type=5, extra=1, digits=3)
 dev.off()
 
+############################### SELECTED FEATURES ##############################
+
+plot.counts <- function(df, gene) {
+  
+  as.data.frame(plotCounts(df, 
+                           gene=gene, 
+                           intgroup="Cell", 
+                           returnData = TRUE)) %>%
+    ggplot(aes(x=Cell, y=count, fill=Cell))  +
+    geom_boxplot() +
+    theme_pubr() +
+    theme(legend.position="none",
+          axis.text.x = element_text(angle=45, hjust=1)) +
+    xlab("Cell") +
+    ylab("Counts") +
+    scale_fill_manual(values = c("Naive B" = pal_jco("default", alpha = 0.8)(7)[1],
+                                 "Memory B" = pal_jco("default", alpha = 0.8)(7)[3],
+                                 "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.8)(7)[4],
+                                 "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.8)(7)[5],
+                                 "Plasma cells" = pal_jco("default", alpha = 0.8)(7)[6])) + 
+    scale_x_discrete(labels=c("Naive B" = "NB", 
+                              "Memory B" = "MB",
+                              "Dark Zone Germinal Center B" = "DZ",
+                              "Light Zone Germinal Center B" = "LZ",
+                              "Plasma cells" = "PB")) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
+    ggtitle(gene) + 
+    theme(plot.title = element_text(hjust = 0.5),
+          aspect.ratio = 1)
+}
+
+
+p1 <- plot.counts(dds_lrt, "ERVLB4_14q23.3")
+p2 <- plot.counts(dds_lrt, "HERVL_2p12a")
+p3 <- plot.counts(dds_lrt, "HERVP71A_8q24.13")
+p4 <- plot.counts(dds_lrt, "MER61_19p12c")
+p5 <- plot.counts(dds_lrt, "HARLEQUIN_19p12b")
+p6 <-  plot.counts(dds_lrt, "HERVFRD_2p12a")
+p7 <-  plot.counts(dds_lrt, "PABLB_7q11.21")
+p8 <-  plot.counts(dds_lrt, "HERVL_1q23.3a")
+p9 <-  plot.counts(dds_lrt, "HERVP71A_15q24.2")
+p10 <-  plot.counts(dds_lrt, "HUERSP2_6p22.3")
+p11 <- plot.counts(dds_lrt, "ERVLE_6p25.1b")
+
+pdf("plots/05h-agirre_selected_features_lasso.pdf", height=9, width=12)
+plot_grid(p1, p2, p3, p4, p5, p6, p7,
+          p8, p9, p10, p11, 
+          nrow = 4, 
+          ncol = 3,
+          labels = "AUTO")
+dev.off()
+
 #################################### SAVE DATA #################################
 
 save(selected_vars, mat.sel, sig_lrt, bor.model, res.stabsel.c, 
      file="r_outputs/05h-agirre_selected_features.Rdata")
+
+load("r_outputs/05h-agirre_selected_features.Rdata")
+
+
+

@@ -160,8 +160,9 @@ p2 <- plot.counts(dds_lrt, "MER101_16p12.2a")
 p3 <- plot.counts(dds_lrt, "HERV3_14q32.33")
 p4 <- plot.counts(dds_lrt, "HERVL40_4q31.3b")
 
+pdf("plots/05j-BL_lasso_selected_features.pdf", height=6, width=6)
 plot_grid(p1, p2, p3, p4,
           nrow = 2, 
           ncol = 2,
           labels = "AUTO")
-
+dev.off()

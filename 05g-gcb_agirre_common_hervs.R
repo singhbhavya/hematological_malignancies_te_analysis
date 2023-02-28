@@ -90,4 +90,17 @@ common_down_hervs <- list(
                                                    sig_agirre$MBvsNB$log2FoldChange < 0])
 )
 
+sink(file = "r_outputs/05g-common_up_hervs_gcb_agirre.txt")
+for (n in names(common_up_hervs)) {
+  cat("\n----#Common upregulated HERVs in ", n, "---#\n")
+  print(common_up_hervs[[n]])
+}
+sink(file=NULL)
+
+sink(file = "r_outputs/05g-common_down_hervs_gcb_agirre.txt")
+for (n in names(common_down_hervs)) {
+  cat("\n----#Common downregulated HERVs in ", n, "---#\n")
+  print(common_down_hervs[[n]])
+}
+sink(file=NULL)
 
