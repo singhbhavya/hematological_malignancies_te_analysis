@@ -121,7 +121,7 @@ pdf("plots/05h-agirre_features_upset.pdf", height=5.5, width=7.5)
 upset(fromList(selected_vars), 
       sets=c('lrt', 'boruta', 'lasso.clust'), 
       order.by = "freq",
-      text.scale = c(1.5, 1.5, 1.3, 1.3, 1.3, 1.3))
+      text.scale = c(2, 2, 2, 2, 2, 2))
 dev.off()
 
 ################################# FEATURE GRAPH ################################

@@ -265,12 +265,14 @@ downvars <- lapply(sig[1:5], function(r) rownames(subset(r, log2FoldChange<0)))
 
 pdf("plots/05e-gcb_upset_upvars.pdf", height=5, width=7)
 upset(fromList(upvars), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
-      keep.order = T, order.by='degree', decreasing=F)
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(2, 2, 1.5, 1.5, 1.5, 1.5))
 dev.off()
 
 pdf("plots/05e-gcb_upset_dnwars.pdf", height=5, width=7)
 upset(fromList(downvars), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
-      keep.order = T, order.by='degree', decreasing=F)
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(2, 2, 1.5, 1.5, 1.5, 1.5))
 dev.off()
 
 up.binmat <- fromList(upvars)
@@ -292,12 +294,14 @@ downvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldC
 
 pdf("plots/05e-gcb_upset_upvars_hervs.pdf", height=5, width=7)
 upset(fromList(upvars_hervs), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
-      keep.order = T, order.by='degree', decreasing=F)
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.5))
 dev.off()
 
 pdf("plots/05e-gcb_upset_dnvars_hervs.pdf", height=5, width=7)
 upset(fromList(downvars_hervs), sets=c("DZ", "GCB", "LZ", "MB", "NB"),  
-      keep.order = T, order.by='degree', decreasing=F)
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.5))
 dev.off()
 
 up.binmat.hervs <- fromList(upvars_hervs)
@@ -508,6 +512,23 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9,
           ncol = 3,
           labels = "AUTO")
 dev.off()
+
+pdf("plots/05e-gcb_healthy_HARLEQUIN_17q21.31.pdf", height=3, width=3)
+plot.counts(GCB.g.dds, "HARLEQUIN_17q21.31")
+dev.off()
+
+pdf("plots/05e-gcb_healthy_HARLEQUIN_1q32.1.pdf", height=3, width=3)
+plot.counts(GCB.g.dds, "HARLEQUIN_1q32.1")
+dev.off()
+
+pdf("plots/05e-gcb_healthy_HML5_1q22.pdf", height=3, width=3)
+plot.counts(GCB.g.dds, "HML5_1q22")
+dev.off()
+
+pdf("plots/05e-gcb_healthy_LILRB1.pdf", height=3, width=3)
+plot.counts(GCB.g.dds, "ENSG00000104972.16")
+dev.off()
+
 
 ################################### SAVE DATA ##################################
 

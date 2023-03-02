@@ -250,7 +250,7 @@ agirre_res_herv <- list(
   "MBvsNB" = DESeq2::results(Agirre.dds, contrast=c("Cell", "Memory B", "Naive B"), alpha=pval)
 )
 
-agirre_res_herv <- agirre_res_herv(agirre_res_herv, function(r) {
+agirre_res_herv <- lapply(agirre_res_herv, function(r) {
   r$display <- gene_table[rownames(r),]$display
   r$class <- gene_table[rownames(r),]$gene_type
   r
@@ -282,12 +282,14 @@ downvars_agirre <- lapply(sig[1:6], function(r) rownames(subset(r, log2FoldChang
 
 pdf("plots/05f-gcb_agirre_upvars.pdf", height=5, width=7)
 upset(fromList(upvars_agirre), sets=c("BMPC", "DZ", "LZ", "MB", "NB", "PB"),  
-      keep.order = T, order.by='degree', decreasing=F)
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
 dev.off()
 
 pdf("plots/05f-gcb_agirre_upset_dnwars.pdf", height=5, width=7)
 upset(fromList(downvars_agirre), sets=c("BMPC", "DZ", "LZ", "MB", "NB", "PB"),  
-      keep.order = T, order.by='degree', decreasing=F)
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
 dev.off()
 
 up.binmat.agirre <- fromList(upvars_agirre)
@@ -551,6 +553,19 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9,
           nrow = 3, 
           ncol = 3,
           labels = "AUTO")
+dev.off()
+
+pdf("plots/05f-agirre_gcb_healthy_HARLEQUIN_17q21.31.pdf", height=3, width=3)
+plot.counts(Agirre.g.dds, "HARLEQUIN_17q21.31")
+dev.off()
+
+pdf("plots/05f-agirre_gcb_healthy_HARLEQUIN_1q32.1.pdf", height=3, width=3)
+plot.counts(Agirre.g.dds, "HARLEQUIN_1q32.1")
+dev.off()
+
+
+pdf("plots/05f-agirre_gcb_healthy_LILRB1.pdf", height=3, width=3)
+plot.counts(Agirre.g.dds, "ENSG00000104972.16")
 dev.off()
 
 ################################### SAVE DATA ##################################
