@@ -280,7 +280,13 @@ plot_grid(plot.counts(BL.hc.dds, "ENSG00000171401.15"),
           labels = "AUTO")
 
 
-plot.counts(BL.hc.dds, "HERVP71A_15q24.2")
+pdf("plots/05k-BL_clusters_HARLEQUIN_1q32.1.pdf", height=3, width=3)
+plot.counts(BL.hc.dds, "HARLEQUIN_1q32.1")
+dev.off()
+
+pdf("plots/05k-BL_clusters_MER101_16p12.2a.pdf", height=3, width=3)
+plot.counts(BL.hc.dds, "MER101_16p12.2a")
+dev.off()
 
 pdf("plots/05k-BL_clusters_MER101_16p12.2a.pdf", height=3, width=3)
 plot.counts(BL.hc.dds, "MER101_16p12.2a")

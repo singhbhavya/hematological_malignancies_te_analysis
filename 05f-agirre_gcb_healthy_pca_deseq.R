@@ -568,6 +568,14 @@ pdf("plots/05f-agirre_gcb_healthy_LILRB1.pdf", height=3, width=3)
 plot.counts(Agirre.g.dds, "ENSG00000104972.16")
 dev.off()
 
+pdf("plots/05f-agirre_gcb_healthy_LILRB1.pdf", height=3, width=3)
+plot.counts(Agirre.g.dds, "ENSG00000104972.16")
+dev.off()
+
+pdf("plots/05f-agirre_gcb_healthy_MER101_16p12.2a.pdf", height=3, width=3)
+plot.counts(Agirre.g.dds, "MER101_16p12.2a")
+dev.off()
+
 ################################### SAVE DATA ##################################
 
 
