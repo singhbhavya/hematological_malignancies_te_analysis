@@ -296,7 +296,7 @@ BL.herv.pca.obj <-
 
 biplot(BL.herv.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -309,15 +309,16 @@ biplot(BL.herv.pca.obj,
        colkey = c("Endemic BL" = wes_palette("Zissou1")[2], 
                   "Sporadic BL" = wes_palette("Zissou1")[4]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
 
-ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 8)
+ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 6)
 
 # Biplot with COO call (only HERVs)
 
 biplot(BL.herv.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -332,9 +333,10 @@ biplot(BL.herv.pca.obj,
        colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
                   "EBV-negative" = wes_palette("Darjeeling1")[4]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
 
-ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
+ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 6)
 
 biplot(BL.herv.pca.obj, 
        lab = NULL,
@@ -424,15 +426,16 @@ biplot(BL.gonly.pca.obj,
        colkey = c("Endemic BL" = wes_palette("Zissou1")[2], 
                   "Sporadic BL" = wes_palette("Zissou1")[4]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
 
-ggsave("plots/05b-BL_genes_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 8)
+ggsave("plots/05b-BL_genes_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 6)
 
 # Biplot with COO call (only HERVs)
 
 biplot(BL.gonly.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -446,9 +449,10 @@ biplot(BL.gonly.pca.obj,
        colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
                   "EBV-negative" = wes_palette("Darjeeling1")[4]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
 
-ggsave("plots/05b-BL_genes_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
+ggsave("plots/05b-BL_genes_pc1_pc2_ebvclinvar.pdf", height = 6, width = 6)
 
 
 ############################ BL DESEQ HERVs & GENES ############################
@@ -499,7 +503,8 @@ biplot(BL.g.pca.obj,
        colkey = c("Endemic BL" = wes_palette("Zissou1")[2], 
                   "Sporadic BL" = wes_palette("Zissou1")[4]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
 
 ggsave("plots/05b-BL_hervsgenes_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 8)
 
@@ -521,7 +526,8 @@ biplot(BL.g.pca.obj,
        colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
                   "EBV-negative" = wes_palette("Darjeeling1")[4]),
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
 
 ggsave("plots/05b-BL_hervsgenes_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
 
@@ -780,6 +786,64 @@ biplot(all.g.pca.obj,
 
 ggsave("plots/05b-all_lymphoma_hervsgenes_biplot_pc1_pc2_cancertype.pdf", height = 9, width = 9)
 
+######################## ALL TOGETHER DESEQ GENES ONLY #########################
+### DESeq2 (Genes Only)
+
+all.gonly.countdat <- all.counts.filt.tx
+cat(sprintf('%d variables\n', nrow(all.gonly.countdat)))
+
+stopifnot(all(colnames(all.gonly.countdat) == rownames(all_metadata)))
+
+all.gonly.dds <- DESeq2::DESeqDataSetFromMatrix(countData = all.gonly.countdat,
+                                            colData = all_metadata,
+                                            design = ~ cancer_type + 0)
+
+all.gonly.dds <- DESeq2::DESeq(all.gonly.dds, parallel=T)
+all.gonly.tform <- DESeq2::varianceStabilizingTransformation(all.gonly.dds, blind=FALSE)
+
+## PCA
+all.gonly.pca.obj <-
+  pca_standard(tform = all.gonly.tform, 
+               metadata = all_metadata, 
+               var = 0.5)
+# 16 PCs for Elbow method
+# 71 PCs for Horn method
+# 10 PCs needed to explain 50 percent of variation
+
+all(rownames(all.gonly.tform$loadings) %in% rownames(gene_table))
+rownames(all.gonly.tform$loadings) <- 
+  gene_table[rownames(all.gonly.tform$loadings), 'display']
+
+####################### ALL LYMPHOMA BIPLOTS GENES ONLY ########################
+
+## Biplot with projects (HERVs and genes)
+
+biplot(all.gonly.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 0.9),
+       pointSize = 2, 
+       encircle = FALSE,
+       sizeLoadingsNames =4,
+       lengthLoadingsArrowsFactor = 3,
+       drawConnectors = TRUE,
+       colby = "subtype",
+       colkey = c(wes_palette("FantasticFox1"),
+                  c(wes_palette("Moonrise3"),
+                    c(wes_palette("Moonrise2")))),
+       shape = "cancer_type", 
+       shapekey = c("DLBCL" = 15, 
+                    "BL" = 8,
+                    "FL" = 2),
+       legendPosition = "bottom")  +
+  theme_cowplot() + 
+  theme(aspect.ratio = 1)
+
+
+ggsave("plots/05b-all_lymphoma_genes_biplot_pc1_pc2_cancertype.pdf", height = 9, width = 9)
+
+
 ################################# SAVE FILES ###################################
 
 save(DLBCL.dds, DLBCL.tform, DLBCL.herv.pca.obj, 
@@ -803,3 +867,4 @@ save(all.dds, all.tform, all.herv.pca.obj,
      file="r_outputs/05b-all_lymphoma_pca_dds.Rdata")
 
 load("r_outputs/05b-all_lymphoma_pca_dds.Rdata")
+load("r_outputs/05b-BL_pca_dds.Rdata")
