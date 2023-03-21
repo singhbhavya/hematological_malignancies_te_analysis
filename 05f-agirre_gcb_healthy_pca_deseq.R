@@ -140,6 +140,32 @@ Agirre.g.pca.obj <-
 # 6 PCs for Horn method
 # 2 PCs needed to explain 50 percent of variation
 
+########################## GCB BULK DESEQ (GENES ONLY) #########################
+
+### DESeq2 (HERVs + Genes)
+
+bulk.gonly.countdat <- GCB_Agirre.filt.tx
+cat(sprintf('%d variables\n', nrow(bulk.gonly.countdat)))
+
+stopifnot(all(colnames(bulk.gonly.countdat) == rownames(agirre_metadata)))
+
+Agirre.gonly.dds <- DESeq2::DESeqDataSetFromMatrix(countData = bulk.gonly.countdat,
+                                               colData = agirre_metadata,
+                                               design = ~ Cell + 0)
+
+Agirre.gonly.dds <- DESeq2::DESeq(Agirre.gonly.dds, parallel=T)
+Agirre.gonly.tform <- DESeq2::varianceStabilizingTransformation(Agirre.gonly.dds, blind=FALSE)
+
+## PCA
+Agirre.gonly.pca.obj <-
+  pca_standard(tform = Agirre.gonly.tform, 
+               metadata = agirre_metadata, 
+               var = 0.1)
+
+# 4 PCs for Elbow method
+# 5 PCs for Horn method
+# 2 PCs needed to explain 50 percent of variation
+
 ##################### AGIRRE GCB BIPLOTS HERVs & GENES #########################
 
 ## Biplot with projects (HERVs and genes)
@@ -191,6 +217,31 @@ biplot(Agirre.herv.pca.obj,
   theme(aspect.ratio = 1)
 dev.off()
 
+pdf("plots/05f-gcb_agirre_pca_genes.pdf", height=5, width=6)
+## Biplot with projects (HERVs only)
+biplot(Agirre.gonly.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 2, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "Cell",
+       colkey = c("Naive B" = pal_jco("default", alpha = 0.8)(7)[1],
+                  "Memory B" = pal_jco("default", alpha = 0.8)(7)[3],
+                  "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.8)(7)[4],
+                  "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.8)(7)[5],
+                  "Plasmablasts" = pal_jco("default", alpha = 0.8)(7)[6],
+                  "Bone Marrow plasma cell" = pal_jco("default", alpha = 0.8)(7)[7]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+dev.off()
+
+
 ################################ SET THRESHOLDS ################################
 
 fc=2 # fold change
@@ -230,6 +281,38 @@ sig <- lapply(agirre_res, function(r) {
 for (n in names(sig)) {
   cat("\n#--- Contrast", n, "---#\n")
   summary(sig[[n]])
+}
+
+########################### TOP GENES & HERVS NO PB ############################
+
+# resultsNames(Agirre.g.dds)
+# [1] "CellBone.Marrow.plasma.cell" "CellDark.Zone.Germinal.Center.B"  "CellLight.Zone.Germinal.Center.B"
+# [4] "CellMemory.B""CellNaive.B" "CellPlasmablasts"                              
+
+agirre_res_no_pb <- list(
+  "DZ" = DESeq2::results(Agirre.g.dds, contrast=c(0, +1, -1/3, -1/3, -1/3, 0), alpha=pval),
+  "LZ" = DESeq2::results(Agirre.g.dds, contrast=c(0, -1/3, +1, -1/3, -1/3, 0), alpha=pval),
+  "MB" = DESeq2::results(Agirre.g.dds, contrast=c(0, -1/3, -1/3, +1, -1/3, 0), alpha=pval),
+  "NB" = DESeq2::results(Agirre.g.dds, contrast=c(0, -1/3, -1/3, -1/3, +1, 0), alpha=pval),
+  "DZvLZ" = DESeq2::results(Agirre.g.dds, contrast=c("Cell", "Dark Zone Germinal Center B", 
+                                                     "Light Zone Germinal Center B"), alpha=pval),
+  "MBvsNB" = DESeq2::results(Agirre.g.dds, contrast=c("Cell", "Memory B", "Naive B"), alpha=pval)
+)
+
+agirre_res_no_pb <- lapply(agirre_res_no_pb, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+sig_no_pb <- lapply(agirre_res_no_pb, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+for (n in names(sig_no_pb)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig_no_pb[[n]])
 }
 
 ############################### TOP HERVs ONLY #################################
@@ -275,6 +358,43 @@ for (n in names(sig_herv)) {
 }
 sink(file = NULL)
 
+############################ TOP HERVs ONLY NO PB ##############################
+
+agirre_res_herv_no_pb <- list(
+  "DZ" = DESeq2::results(Agirre.dds, contrast=c(0, +1, -1/3, -1/3, -1/3, 0), alpha=pval),
+  "LZ" = DESeq2::results(Agirre.dds, contrast=c(0, -1/3, +1, -1/3, -1/3, 0), alpha=pval),
+  "MB" = DESeq2::results(Agirre.dds, contrast=c(0, -1/3, -1/3, +1, -1/3, 0), alpha=pval),
+  "NB" = DESeq2::results(Agirre.dds, contrast=c(0, -1/3, -1/3, -1/3, +1, 0), alpha=pval),
+  "DZvLZ" = DESeq2::results(Agirre.dds, contrast=c("Cell", "Dark Zone Germinal Center B", 
+                                                   "Light Zone Germinal Center B"), alpha=pval),
+  "MBvsNB" = DESeq2::results(Agirre.dds, contrast=c("Cell", "Memory B", "Naive B"), alpha=pval)
+)
+
+agirre_res_herv_no_pb <- lapply(agirre_res_herv_no_pb, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+sig_herv_no_pb <- lapply(agirre_res_herv_no_pb, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+sink(file = "r_outputs/05f-agirre_herv_no_pb_deseq.txt")
+for (n in names(sig_herv_no_pb)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig_herv_no_pb[[n]])
+}
+sink(file = NULL)
+
+sink(file = "r_outputs/05f-agirre_herv_no_pb_deseq_top5.txt")
+for (n in names(sig_herv_no_pb)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  print(head(sig_herv_no_pb[[n]]))
+}
+sink(file = NULL)
+
 ############################ UPSET GENES & HERVS ###############################
 
 upvars_agirre <- lapply(sig[1:6], function(r) rownames(subset(r, log2FoldChange>0)))
@@ -304,6 +424,36 @@ rn <- rn[!duplicated(rn)]
 rownames(dn.binmat.agirre) <- rn
 rm(rn)
 
+######################### UPSET GENES & HERVS NO PB ############################
+
+upvars_agirre_no_pb <- lapply(sig_no_pb[1:4], function(r) rownames(subset(r, log2FoldChange>0)))
+downvars_agirre_no_pb <- lapply(sig_no_pb[1:4], function(r) rownames(subset(r, log2FoldChange<0)))
+
+pdf("plots/05f-gcb_agirre_no_pb_upvars.pdf", height=5, width=7)
+upset(fromList(upvars_agirre_no_pb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+dev.off()
+
+pdf("plots/05f-gcb_agirre_no_pb_upset_dnwars.pdf", height=5, width=7)
+upset(fromList(downvars_agirre_no_pb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+dev.off()
+
+up.binmat.agirre.no.pb <- fromList(upvars_agirre_no_pb)
+rn <- do.call(c, upvars_agirre_no_pb)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat.agirre.no.pb) <- rn
+rm(rn)
+
+dn.binmat.agirre.no.pb <- fromList(downvars_agirre_no_pb)
+rn <- do.call(c, downvars_agirre_no_pb)
+rn <- rn[!duplicated(rn)]
+rownames(dn.binmat.agirre.no.pb) <- rn
+rm(rn)
+
+
 ############################# UPSET HERVs ONLY #################################
 
 upvars_agirre_hervs <- lapply(sig_herv[1:6], function(r) rownames(subset(r, log2FoldChange>0)))
@@ -330,6 +480,34 @@ rn <- do.call(c, downvars_agirre_hervs)
 rn <- rn[!duplicated(rn)]
 rownames(dn.binmat.hervs.agirre) <- rn
 rm(rn)
+
+########################## UPSET HERVs ONLY NO PB ##############################
+
+upvars_agirre_hervs_no_pb <- lapply(sig_herv_no_pb[1:4], function(r) rownames(subset(r, log2FoldChange>0)))
+downvars_agirre_hervs_no_pb <- lapply(sig_herv_no_pb[1:4], function(r) rownames(subset(r, log2FoldChange<0)))
+
+pdf("plots/05f-gcb_agirre_upset_upvars_hervs_no_pb.pdf", height=5, width=7)
+upset(fromList(upvars_agirre_hervs_no_pb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F)
+dev.off()
+
+pdf("plots/05f-gcb_agirre_upset_dnvars_hervs_no_pb.pdf", height=5, width=7)
+upset(fromList(downvars_agirre_hervs_no_pb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F)
+dev.off()
+
+up.binmat.hervs.agirre.no.pb <- fromList(upvars_agirre_hervs_no_pb)
+rn <- do.call(c, upvars_agirre_hervs_no_pb)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat.hervs.agirre.no.pb) <- rn
+rm(rn)
+
+dn.binmat.hervs.agirre.no.pb <- fromList(downvars_agirre_hervs_no_pb)
+rn <- do.call(c, downvars_agirre_hervs_no_pb)
+rn <- rn[!duplicated(rn)]
+rownames(dn.binmat.hervs.agirre.no.pb) <- rn
+rm(rn)
+
 
 ################################# HEATMAPS #####################################
 
@@ -437,6 +615,167 @@ for(clust in c("MB")) {
   print(p)
   dev.off()
 }
+
+########################### FAMILY LEVEL UP NO PB ##############################
+
+upreg_hervs_no_pb_df <- do.call(rbind, lapply(upvars_agirre_hervs_no_pb, data.frame))
+colnames(upreg_hervs_no_pb_df) <- c("herv")
+upreg_hervs_no_pb_df$cell_type <- rownames(upreg_hervs_no_pb_df)
+upreg_hervs_no_pb_df$cell_type <- gsub("\\..*","",upreg_hervs_no_pb_df$cell_type)
+upreg_hervs_no_pb_df$family <- retro.annot$family[match(upreg_hervs_no_pb_df$herv, 
+                                                         retro.annot$locus)]
+
+upreg_families_no_pb <-
+  upreg_hervs_no_pb_df %>% dplyr::count(family, cell_type, sort = TRUE) 
+
+upreg_families_no_pb<-upreg_families_no_pb[!(upreg_families_no_pb$cell_type=="DZvLZ"),]
+
+pdf("plots/05f-gcb_agirre_upreg_families.pdf", height=8, width=6)
+ggplot(upreg_families_no_pb, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Upregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2))
+dev.off()
+
+############################### FAMILY LEVEL DOWN ##############################
+
+down_hervs_no_pb_df <- do.call(rbind, lapply(downvars_agirre_hervs_no_pb, data.frame))
+colnames(down_hervs_no_pb_df) <- c("herv")
+down_hervs_no_pb_df$cell_type <- rownames(down_hervs_no_pb_df)
+down_hervs_no_pb_df$cell_type <- gsub("\\..*","",down_hervs_no_pb_df$cell_type)
+down_hervs_no_pb_df$family <- retro.annot$family[match(down_hervs_no_pb_df$herv, 
+                                                        retro.annot$locus)]
+
+downreg_families_no_pb <-
+  down_hervs_no_pb_df %>% dplyr::count(family, cell_type, sort = TRUE) 
+
+downreg_families_no_pb<-downreg_families_no_pb[!(downreg_families_no_pb$cell_type=="DZvLZ"),]
+
+pdf("plots/05f-gcb_agirre_families.pdf", height=8, width=6)
+ggplot(downreg_families_no_pb, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Downregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2))
+dev.off()
+
+
+############################# MERGED FAMILY UP/DOWN ############################
+
+
+updown_family <- do.call(rbind, (list(Upregulated = upreg_families_no_pb, 
+                                      Dowregulated = downreg_families_no_pb)))
+updown_family$expression <- rownames(updown_family)
+updown_family$expression <- gsub("\\..*","",updown_family$expression)
+rownames(updown_family)<-NULL
+
+pdf("plots/05f-gcb_agirre_updown_families.pdf", height=8, width=10)
+ggplot(updown_family, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Downregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
+
+
+############################ FAMILY LEVEL WITH PB ##############################
+
+upreg_hervs_pb <- do.call(rbind, lapply(upvars_agirre_hervs, data.frame))
+colnames(upreg_hervs_pb) <- c("herv")
+upreg_hervs_pb$cell_type <- rownames(upreg_hervs_pb)
+upreg_hervs_pb$cell_type <- gsub("\\..*","",upreg_hervs_pb$cell_type)
+upreg_hervs_pb$family <- retro.annot$family[match(upreg_hervs_no_pb_df$herv, 
+                                                        retro.annot$locus)]
+
+upreg_families_pb <-
+  upreg_hervs_pb %>% dplyr::count(family, cell_type, sort = TRUE) 
+
+upreg_families_pb<-upreg_families_pb[!(upreg_families_pb$cell_type=="DZvLZ"),]
+
+down_hervs_pb <- do.call(rbind, lapply(downvars_agirre_hervs, data.frame))
+colnames(down_hervs_pb) <- c("herv")
+down_hervs_pb$cell_type <- rownames(down_hervs_pb)
+down_hervs_pb$cell_type <- gsub("\\..*","",down_hervs_pb$cell_type)
+down_hervs_pb$family <- retro.annot$family[match(down_hervs_pb$herv, 
+                                                       retro.annot$locus)]
+
+downreg_families_pb <-
+  down_hervs_pb %>% dplyr::count(family, cell_type, sort = TRUE) 
+
+downreg_families_pb<-downreg_families_pb[!(downreg_families_pb$cell_type=="DZvLZ"),]
+
+updown_family <- do.call(rbind, (list(Upregulated = upreg_families_pb, 
+                                      Dowregulated = downreg_families_pb)))
+updown_family$expression <- rownames(updown_family)
+updown_family$expression <- gsub("\\..*","",updown_family$expression)
+rownames(updown_family)<-NULL
+
+pdf("plots/05f-gcb_agirre_updown_families_with_pb.pdf", height=8, width=10)
+ggplot(updown_family, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Downregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+
+dev.off()
 
 ############################# VOLCANO DZ VS LZ #################################
 
@@ -581,7 +920,14 @@ dev.off()
 
 sig_herv_agirre <- sig_herv
 sig_agirre <- sig
+sig_agirre_no_pb <- sig_no_pb
+sig_herv_agirre_no_pb <- sig_herv_no_pb
 
 save(upvars_agirre, upvars_agirre_hervs, downvars_agirre, downvars_agirre_hervs,
      sig_herv_agirre, sig_agirre, file = "r_outputs/05f-agirre_vars.Rdata")
 
+save(upvars_agirre_hervs_no_pb, upvars_agirre_hervs_no_pb, downvars_agirre_no_pb, downvars_agirre_hervs_no_pb,
+     sig_herv_agirre_no_pb, sig_agirre_no_pb, file = "r_outputs/05f-agirre_vars_no_pb.Rdata")
+
+load("r_outputs/05f-agirre_vars.Rdata")
+load("r_outputs/05f-agirre_vars_no_pb.Rdata")

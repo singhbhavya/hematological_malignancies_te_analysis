@@ -155,10 +155,10 @@ plot.counts <- function(df, gene) {
 }
 
 
-p1 <- plot.counts(dds_lrt, "HERVH48_8q24.13")
-p2 <- plot.counts(dds_lrt, "MER101_16p12.2a")
-p3 <- plot.counts(dds_lrt, "HERV3_14q32.33")
-p4 <- plot.counts(dds_lrt, "HERVL40_4q31.3b")
+p1 <- plot.counts(dds, "HERVH48_8q24.13")
+p2 <- plot.counts(dds, "MER101_16p12.2a")
+p3 <- plot.counts(dds, "HERV3_14q32.33")
+p4 <- plot.counts(dds, "HERVL40_4q31.3b")
 
 pdf("plots/05j-BL_lasso_selected_features.pdf", height=6, width=6)
 plot_grid(p1, p2, p3, p4,
@@ -166,3 +166,23 @@ plot_grid(p1, p2, p3, p4,
           ncol = 2,
           labels = "AUTO")
 dev.off()
+
+################################# CLUSTER SIZES ################################
+
+reads.left <- as.data.frame(colSums(BL.counts.mfilt.comb))
+colnames(reads.left) <- c("reads")
+reads.left$sample <- rownames(reads.left)
+
+reads.left$clust <- BL_metadata$clust.retro.k3
+
+reads.left %>%
+  group_by(clust) %>%
+  summarise_at(vars(reads), list(name = mean))
+
+# # A tibble: 3 × 2
+# clust      name
+#<fct>     <dbl>
+#  C1    46060106.
+#  C2      265831.
+#  C3    40353822.
+

@@ -33,7 +33,7 @@ load("r_outputs/02-GCB_Bulk_filt_counts.Rdata")
 load("r_outputs/01-metadata.Rdata")
 load("r_outputs/01-refs.Rdata")
 
-remove(BL_metadata, DLBCL_metadata, FL_metadata, all_metadata)
+remove(BL_metadata, DLBCL_metadata, FL_metadata, all_metadata, agirre_metadata)
 
 ############################# FUNCTION SCREE PLOT ##############################
 
@@ -129,6 +129,33 @@ GCB.g.pca.obj <-
 # 4 PCs for Horn method
 # 1 PCs needed to explain 50 percent of variation
 
+######################### GCB BULK DESEQ (GENES ONLY) ##########################
+
+### DESeq2 (HERVs + Genes)
+
+bulk.gonly.countdat <- GCB_Bulk.filt.tx
+cat(sprintf('%d variables\n', nrow(bulk.gonly.countdat)))
+
+stopifnot(all(colnames(bulk.gonly.countdat) == rownames(bulk_metadata)))
+
+GCB.gonly.dds <- DESeq2::DESeqDataSetFromMatrix(countData = bulk.gonly.countdat,
+                                            colData = bulk_metadata,
+                                            design = ~ Cell_type + 0)
+
+GCB.gonly.dds <- DESeq2::DESeq(GCB.gonly.dds, parallel=T)
+GCB.gonly.tform <- DESeq2::varianceStabilizingTransformation(GCB.gonly.dds, blind=FALSE)
+
+## PCA
+GCB.gonly.pca.obj <-
+  pca_standard(tform = GCB.gonly.tform, 
+               metadata = bulk_metadata, 
+               var = 0.1)
+
+# 3 PCs for Elbow method
+# 3 PCs for Horn method
+# 1 PCs needed to explain 50 percent of variation
+
+
 ###################### BULK GCB BIPLOTS HERVs & GENES ##########################
 
 ## Biplot with projects (HERVs and genes)
@@ -158,6 +185,29 @@ dev.off()
 pdf("plots/05e-gcb_pca_hervs.pdf", height=5, width=6)
 ## Biplot with projects (HERVs only)
 biplot(GCB.herv.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 2, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "Cell_type",
+       colkey = c("Naive B" = pal_jco("default", alpha = 0.7)(5)[1],
+                  "Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[2],
+                  "Memory B" = pal_jco("default", alpha = 0.7)(5)[3],
+                  "Dark Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[4],
+                  "Light Zone Germinal Center B" = pal_jco("default", alpha = 0.7)(5)[5]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+dev.off()
+
+pdf("plots/05e-gcb_pca_genes.pdf", height=5, width=6)
+## Biplot with projects (genes only)
+biplot(GCB.gonly.pca.obj, 
        lab = NULL,
        showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
@@ -219,6 +269,35 @@ for (n in names(sig)) {
   summary(sig[[n]])
 }
 
+########################## TOP GENES & HERVS NO GCB ############################
+
+gcb_res_no_gcb <- list(
+  "DZ" = DESeq2::results(GCB.g.dds, contrast=c(+1, 0, -1/3, -1/3, -1/3), alpha=pval),
+  "LZ" = DESeq2::results(GCB.g.dds, contrast=c(-1/3, 0, +1, -1/3, -1/3), alpha=pval),
+  "MB" = DESeq2::results(GCB.g.dds, contrast=c(-1/3, 0, -1/3, +1, -1/3), alpha=pval),
+  "NB" = DESeq2::results(GCB.g.dds, contrast=c(-1/3, 0, -1/3, -1/3, 1), alpha=pval),
+  "DZvLZ" = DESeq2::results(GCB.g.dds, contrast=c("Cell_type", "Dark Zone Germinal Center B", 
+                                                  "Light Zone Germinal Center B"), alpha=pval),
+  "MBvsNB" = DESeq2::results(GCB.g.dds, contrast=c("Cell_type", "Memory B", "Naive B"), alpha=pval)
+)
+
+gcb_res_no_gcb <- lapply(gcb_res_no_gcb, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+sig_no_gcb <- lapply(gcb_res_no_gcb, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+for (n in names(sig_no_gcb)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig_no_gcb[[n]])
+}
+
+
 ############################### TOP HERVs ONLY #################################
 
 gcb_res_herv <- list(
@@ -258,6 +337,45 @@ for (n in names(sig_herv)) {
 }
 sink(file = NULL)
 
+############################ TOP HERVs ONLY NO GCB #############################
+
+gcb_res_herv_no_gcb <- list(
+  "DZ" = DESeq2::results(GCB.dds, contrast=c(+1, 0, -1/3, -1/3, -1/3), alpha=pval),
+  "LZ" = DESeq2::results(GCB.dds, contrast=c(-1/3, 0, +1, -1/3, -1/3), alpha=pval),
+  "MB" = DESeq2::results(GCB.dds, contrast=c(-1/3, 0, -1/3, +1, -1/3), alpha=pval),
+  "NB" = DESeq2::results(GCB.dds, contrast=c(-1/3, 0, -1/3, -1/3, 1), alpha=pval),
+  "DZvLZ" = DESeq2::results(GCB.dds, contrast=c("Cell_type", "Dark Zone Germinal Center B", 
+                                                  "Light Zone Germinal Center B"), alpha=pval),
+  "MBvsNB" = DESeq2::results(GCB.dds, contrast=c("Cell_type", "Memory B", "Naive B"), alpha=pval)
+)
+
+gcb_res_herv_no_gcb <- lapply(gcb_res_herv_no_gcb, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+
+sig_herv_no_gcb <- lapply(gcb_res_herv_no_gcb, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+sink(file = "r_outputs/05e-gcb_herv_no_gcb_deseq.txt")
+for (n in names(sig_herv_no_gcb)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig_herv_no_gcb[[n]])
+}
+sink(file = NULL)
+
+sink(file = "r_outputs/05e-gcb_herv_no_gcb_deseq_top5.txt")
+for (n in names(sig_herv_no_gcb)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  print(head(sig_herv_no_gcb[[n]]))
+}
+sink(file = NULL)
+
+
 ############################ UPSET GENES & HERVS ###############################
 
 upvars <- lapply(sig[1:5], function(r) rownames(subset(r, log2FoldChange>0)))
@@ -287,6 +405,37 @@ rn <- rn[!duplicated(rn)]
 rownames(dn.binmat) <- rn
 rm(rn)
 
+######################## UPSET GENES & HERVS NO GCB ############################
+
+upvars_no_gcb <- lapply(sig_no_gcb[1:4], function(r) 
+  rownames(subset(r, log2FoldChange>0)))
+downvars_no_gcb <- lapply(sig_no_gcb[1:5], function(r) 
+  rownames(subset(r, log2FoldChange<0)))
+
+pdf("plots/05e-gcb_no_gcb_upset_upvars.pdf", height=5, width=7)
+upset(fromList(upvars_no_gcb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(2, 2, 1.5, 1.5, 1.5, 1.5))
+dev.off()
+
+pdf("plots/05e-gcb_no_gcb_upset_dnwars.pdf", height=5, width=7)
+upset(fromList(downvars_no_gcb), sets=c("DZ","LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(2, 2, 1.5, 1.5, 1.5, 1.5))
+dev.off()
+
+up.no.gcb.binmat <- fromList(upvars_no_gcb)
+rn <- do.call(c, upvars_no_gcb)
+rn <- rn[!duplicated(rn)]
+rownames(up.no.gcb.binmat) <- rn
+rm(rn)
+
+dn.no.gcb.binmat <- fromList(downvars_no_gcb)
+rn <- do.call(c, downvars_no_gcb)
+rn <- rn[!duplicated(rn)]
+rownames(dn.no.gcb.binmat) <- rn
+rm(rn)
+
 ############################# UPSET HERVs ONLY #################################
 
 upvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldChange>0)))
@@ -314,6 +463,37 @@ dn.binmat.hervs <- fromList(downvars_hervs)
 rn <- do.call(c, downvars_hervs)
 rn <- rn[!duplicated(rn)]
 rownames(dn.binmat.hervs) <- rn
+rm(rn)
+
+######################### UPSET HERVs ONLY NO GCB ##############################
+
+upvars_hervs_no_gcb <- lapply(sig_herv_no_gcb[1:5], function(r) 
+  rownames(subset(r, log2FoldChange>0)))
+downvars_hervs_no_gcb <- lapply(sig_herv_no_gcb[1:5],
+                                function(r) rownames(subset(r, log2FoldChange<0)))
+
+pdf("plots/05e-gcb_no_gcb_upset_upvars_hervs.pdf", height=5, width=7)
+upset(fromList(upvars_hervs_no_gcb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.5))
+dev.off()
+
+pdf("plots/05e-gcb_no_gcb_upset_dnvars_hervs.pdf", height=5, width=7)
+upset(fromList(downvars_hervs_no_gcb), sets=c("DZ", "LZ", "MB", "NB"),  
+      keep.order = T, order.by='degree', decreasing=F,
+      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.5))
+dev.off()
+
+up.no.gcb.binmat.hervs <- fromList(upvars_hervs_no_gcb)
+rn <- do.call(c, upvars_hervs_no_gcb)
+rn <- rn[!duplicated(rn)]
+rownames(up.no.gcb.binmat.hervs) <- rn
+rm(rn)
+
+dn.no.gcb.binmat.hervs <- fromList(downvars_hervs_no_gcb)
+rn <- do.call(c, downvars_hervs_no_gcb)
+rn <- rn[!duplicated(rn)]
+rownames(dn.no.gcb.binmat.hervs) <- rn
 rm(rn)
 
 ################################# HEATMAPS #####################################
@@ -529,6 +709,110 @@ pdf("plots/05e-gcb_healthy_LILRB1.pdf", height=3, width=3)
 plot.counts(GCB.g.dds, "ENSG00000104972.16")
 dev.off()
 
+############################### FAMILY LEVEL UP ################################
+
+upreg_hervs_no_gcb_df <- do.call(rbind, lapply(upvars_hervs_no_gcb, data.frame))
+colnames(upreg_hervs_no_gcb_df) <- c("herv")
+upreg_hervs_no_gcb_df$cell_type <- rownames(upreg_hervs_no_gcb_df)
+upreg_hervs_no_gcb_df$cell_type <- gsub("\\..*","",upreg_hervs_no_gcb_df$cell_type)
+upreg_hervs_no_gcb_df$family <- retro.annot$family[match(upreg_hervs_no_gcb_df$herv, 
+                                                         retro.annot$locus)]
+
+upreg_families_no_gcb <-
+  upreg_hervs_no_gcb_df %>% dplyr::count(family, cell_type, sort = TRUE) 
+
+upreg_families_no_gcb<-upreg_families_no_gcb[!(upreg_families_no_gcb$cell_type=="DZvLZ"),]
+
+pdf("plots/05e-gcb_upreg_families.pdf", height=8, width=6)
+ggplot(upreg_families_no_gcb, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Upregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2))
+dev.off()
+
+############################### FAMILY LEVEL DOWN ##############################
+
+down_hervs_no_gcb_df <- do.call(rbind, lapply(downvars_hervs_no_gcb, data.frame))
+colnames(down_hervs_no_gcb_df) <- c("herv")
+down_hervs_no_gcb_df$cell_type <- rownames(down_hervs_no_gcb_df)
+down_hervs_no_gcb_df$cell_type <- gsub("\\..*","",down_hervs_no_gcb_df$cell_type)
+down_hervs_no_gcb_df$family <- retro.annot$family[match(down_hervs_no_gcb_df$herv, 
+                                                         retro.annot$locus)]
+
+downreg_families_no_gcb <-
+  down_hervs_no_gcb_df %>% dplyr::count(family, cell_type, sort = TRUE) 
+
+downreg_families_no_gcb<-downreg_families_no_gcb[!(downreg_families_no_gcb$cell_type=="DZvLZ"),]
+
+pdf("plots/05e-gcb_downreg_families.pdf", height=8, width=6)
+ggplot(downreg_families_no_gcb, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Downregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2))
+dev.off()
+
+
+############################# MERGED FAMILY UP/DOWN ############################
+
+
+updown_family <- do.call(rbind, (list(Upregulated = upreg_families_no_gcb, 
+                                      Dowregulated = downreg_families_no_gcb)))
+updown_family$expression <- rownames(updown_family)
+updown_family$expression <- gsub("\\..*","",updown_family$expression)
+rownames(updown_family)<-NULL
+
+pdf("plots/05e-gcb_updown_families.pdf", height=8, width=10)
+ggplot(updown_family, aes(fill=reorder(family, -n), y=cell_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("Downregulated HERVs by Family") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
 
 ################################### SAVE DATA ##################################
 
@@ -540,5 +824,11 @@ sig_herv_gcb <- sig_herv
 sig_gcb <- sig
 
 save(upvars_gcb, upvars_gcb_hervs, downvars_gcb, downvars_gcb_hervs,
-     sig_herv_gcb, sig_gcb, file = "r_outputs/05e-gcb_vars.Rdata")                       
+     sig_herv_gcb, sig_gcb, file = "r_outputs/05e-gcb_vars.Rdata")   
+
+
+save(upvars_no_gcb, upvars_hervs_no_gcb, downvars_no_gcb, downvars_hervs_no_gcb,
+     sig_herv_no_gcb, sig_no_gcb, file = "r_outputs/05e_gcb_vars_no_gcb.Rdata")
+
+load("r_outputs/05e_gcb_vars_no_gcb.Rdata")
                        
