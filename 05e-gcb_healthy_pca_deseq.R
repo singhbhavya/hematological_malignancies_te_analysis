@@ -18,6 +18,7 @@ library(data.table)
 library(PCAtools)
 library(DESeq2)
 library(ggplot2)
+library(pheatmap)
 library(ggsci)
 library(ggpubr)
 library(edgeR)
@@ -32,6 +33,9 @@ library(EnhancedVolcano)
 load("r_outputs/02-GCB_Bulk_filt_counts.Rdata")
 load("r_outputs/01-metadata.Rdata")
 load("r_outputs/01-refs.Rdata")
+retro.annot.v2 <- read.csv("/efs/projects/hematological_malignancies_te_analysis/refs/TE_annotation.v2.0.tsv",
+                           sep = "\t")
+rownames(retro.annot.v2) <- retro.annot.v2$Locus
 
 remove(BL_metadata, DLBCL_metadata, FL_metadata, all_metadata, agirre_metadata)
 
@@ -314,6 +318,7 @@ gcb_res_herv <- list(
 gcb_res_herv <- lapply(gcb_res_herv, function(r) {
   r$display <- gene_table[rownames(r),]$display
   r$class <- gene_table[rownames(r),]$gene_type
+  r$TE_type <- retro.annot.v2[rownames(r),]$TE_type
   r
 })
 
@@ -352,6 +357,7 @@ gcb_res_herv_no_gcb <- list(
 gcb_res_herv_no_gcb <- lapply(gcb_res_herv_no_gcb, function(r) {
   r$display <- gene_table[rownames(r),]$display
   r$class <- gene_table[rownames(r),]$gene_type
+  r$TE_type <- retro.annot.v2[rownames(r),]$TE_type
   r
 })
 
@@ -509,13 +515,20 @@ df <- subset(df, select = -c(1))
 
 # Create colors for each group
 annoCol <-  pal_jco("default", alpha = 0.7)(5)
+annoCol2 <- pal_aaas("default", alpha=0.7)(3)
+names(annoCol2) <- unique(retro.annot.v2$TE_type)
 names(annoCol) <- unique(df$Cell_type)
-annoCol <- list(Cell_type = annoCol)
+annoCol <- list(Cell_type = annoCol, TE_type = annoCol2)
 
 ######################### UPREGULATED IN ALL GROUPS ############################
 
 top.genes.hervs <- rownames(up.binmat)
 top.hervs <- rownames(up.binmat.hervs)
+
+
+annoRow <- as.data.frame(retro.annot.v2[,c("TE_type", "Locus")])
+annoRow <- annoRow[top.hervs,]
+annoRow <- subset(annoRow, select = -c(2))
 
 pdf("plots/05e-gcb_top_hervs_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(GCB.tform)[top.hervs,], 
@@ -530,6 +543,7 @@ pheatmap(assay(GCB.tform)[top.hervs,],
          cluster_cols=TRUE, 
          treeheight_row=0,
          annotation_col=df,
+         annotation_row=annoRow,
          annotation_colors = annoCol)
 dev.off()
 
@@ -561,11 +575,9 @@ makeheatmap <- function(topgenes, ...) {
   annotation_col <- df
   cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
   
-  annotation_row <- data.frame(
-    row.names = rownames(mat),
-    Group=retro.annot[rownames(mat),]$family,
-    Chrom=retro.annot[rownames(mat),]$chrom
-  )
+  annoRow <- as.data.frame(retro.annot.v2[,c("TE_type", "Locus")])
+  annoRow <- annoRow[topgenes,]
+  annoRow <- subset(annoRow, select = -c(2))
   
   pheatmap(mat,
            color=cols,
@@ -574,6 +586,7 @@ makeheatmap <- function(topgenes, ...) {
            clustering_method="average",
            annotation_col = df,
            annotation_colors = annoCol,
+           annotation_row = annoRow,
            show_colnames=F, 
            show_rownames = T,
            fontsize = 8, fontsize_row = 6, border_color = NA,
@@ -814,6 +827,52 @@ ggplot(updown_family, aes(fill=reorder(family, -n), y=cell_type, x=n)) +
   facet_wrap(~ expression, ncol = 2)
 dev.off()
 
+#################################### TE TYPE ###################################
+
+rownames(upreg_hervs_no_gcb_df) <- NULL
+upreg_hervs_no_gcb_df$type <- retro.annot.v2$TE_type[
+  match(upreg_hervs_no_gcb_df$herv, retro.annot.v2$Locus)]
+
+upreg_hervs_no_gcb_df<-upreg_hervs_no_gcb_df[!(upreg_hervs_no_gcb_df$cell_type=="DZvLZ"),]
+
+upreg_te_type <-
+  upreg_hervs_no_gcb_df %>% dplyr::count(type, cell_type, sort = TRUE) 
+
+pdf("plots/05e-gcb_upreg_hervs_type.pdf", height=4, width=4)
+ggplot(upreg_te_type, aes(fill=reorder(type, -n), y=cell_type, x=n)) + 
+  geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_aaas("default", alpha=0.7)(3))) + 
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="HERV Type")) +
+  ylab("Upregulated HERVs by Type") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) +
+  theme(aspect.ratio = 1)
+dev.off()
+
+rownames(down_hervs_no_gcb_df) <- NULL
+down_hervs_no_gcb_df$type <- retro.annot.v2$TE_type[
+  match(down_hervs_no_gcb_df$herv, retro.annot.v2$Locus)]
+
+down_hervs_no_gcb_df<-down_hervs_no_gcb_df[!(down_hervs_no_gcb_df$cell_type=="DZvLZ"),]
+
+downreg_te_type <-
+  down_hervs_no_gcb_df %>% dplyr::count(type, cell_type, sort = TRUE) 
+
+pdf("plots/05e-gcb_downreg_hervs_type.pdf", height=4, width=4)
+ggplot(downreg_te_type, aes(fill=reorder(type, -n), y=cell_type, x=n)) + 
+  geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_aaas("default", alpha=0.7)(3))) + 
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="HERV Type")) +
+  ylab("Downregulated HERVs by Type") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) +
+  theme(aspect.ratio = 1)
+dev.off()
+
 ################################### SAVE DATA ##################################
 
 upvars_gcb <- upvars
@@ -830,5 +889,6 @@ save(upvars_gcb, upvars_gcb_hervs, downvars_gcb, downvars_gcb_hervs,
 save(upvars_no_gcb, upvars_hervs_no_gcb, downvars_no_gcb, downvars_hervs_no_gcb,
      sig_herv_no_gcb, sig_no_gcb, file = "r_outputs/05e_gcb_vars_no_gcb.Rdata")
 
+load("r_outputs/05e-gcb_vars.Rdata")
 load("r_outputs/05e_gcb_vars_no_gcb.Rdata")
                        
