@@ -106,7 +106,7 @@ pca_standard <- function(tform, metadata, var) {
 lfc.cutoff <- 1.5
 pval=0.001 # p value threshold
 
-################################### DARK ZONE ##################################
+################################### DARK ZONE ALL ##################################
 
 dz.metadata  <- rbind(agirre_metadata[agirre_metadata$Cell_type == "DZ",], 
                       bulk_metadata[bulk_metadata$Cell_type == "DZ",])
@@ -141,7 +141,7 @@ dz.res <- as.data.frame(dz.res) %>%
 
 dz.ranks <- deframe(dz.res)
 
-dz.fgsea <- fgsea(pathways=pathways.immune, stats=dz.ranks, eps=0)
+dz.fgsea <- fgsea(pathways=pathways.hallmark, stats=dz.ranks, eps=0)
 
 dz.fgseaResTidy <- dz.fgsea %>%
   as_tibble() %>%
@@ -155,12 +155,21 @@ dz.fgseaResTidy %>%
 
 dz.pathways.subset <- dz.fgseaResTidy[dz.fgseaResTidy$pathway %like% "DARK", ]
 
-ggplot(dz.pathways.subset, aes(reorder(pathway, NES), NES)) +
+
+ggplot(dz.fgseaResTidy, aes(reorder(pathway, NES), NES)) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
   labs(x="Pathway", y="Normalized Enrichment Score",
        title="Hallmark pathways NES from GSEA") + 
   theme_minimal()
+
+ggplot(dz.pathways.subset, aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Immune pathways NES from GSEA") + 
+  theme_minimal()
+
 
 ################################### LIGHT ZONE #################################
 
