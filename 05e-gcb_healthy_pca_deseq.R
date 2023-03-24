@@ -1279,6 +1279,9 @@ save(upvars_gcb, upvars_gcb_hervs, downvars_gcb, downvars_gcb_hervs,
 save(upvars_no_gcb, upvars_hervs_no_gcb, downvars_no_gcb, downvars_hervs_no_gcb,
      sig_herv_no_gcb, sig_no_gcb, file = "r_outputs/05e_gcb_vars_no_gcb.Rdata")
 
+save(upvars_naive, upvars_naive_hervs, downvars_naive, downvars_naive_hervs,
+     sig_naive, sig_naive_herv, file = "r_outputs/05_gcb_naive_vars.Rdata")
+
 load("r_outputs/05e-gcb_vars.Rdata")
 load("r_outputs/05e_gcb_vars_no_gcb.Rdata")
                        
