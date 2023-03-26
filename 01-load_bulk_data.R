@@ -34,6 +34,10 @@ retro.hg38.v1 <- retro.hg38.v1 %>%
     te_class = factor(ifelse(is.na(l1base_id), 'LTR', 'LINE'), levels=c('LTR','LINE')),
   )
 
+retro.annot.v2 <- read.csv("/efs/projects/hematological_malignancies_te_analysis/refs/TE_annotation.v2.0.tsv",
+                           sep = "\t")
+rownames(retro.annot.v2) <- retro.annot.v2$Locus
+
 # Annotation directory for scopetools
 ddir <- system.file("extdata", package="scopetools")
 
@@ -415,24 +419,46 @@ stopifnot(all(names(FL.counts.tx) == names(FL.counts.rtx)))
 stopifnot(all(names(GCB_Bulk.counts.tx) == names(GCB_Bulk.counts.rtx)))
 stopifnot(all(names(GCB_Agirre.counts.tx) == names(GCB_Agirre.counts.rtx)))
 
+
+############################# BL BATCH CORRECTION ##############################
+
+BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
+tumor_biopsy = sapply(as.character(BL_metadata$tumor_biopsy), 
+                      switch, "frozen" = 1, "FFPE" = 2, "NA" = 3, USE.NAMES = F)
+tissue_source_site = sapply(as.character(BL_metadata$tissue_source_site), 
+                            switch, "Children's Oncology Group, USA" = 4,
+                            "St Mary's Hospital, Uganda" = 2, 
+                            "St. Jude Children's Research Hospital, USA" = 3, 
+                            "Uganda Cancer Institute, Uganda" = 1,
+                            USE.NAMES = F)
+
+BL.counts.comb.corrected = ComBat_seq(counts = as.matrix(BL.counts.comb), 
+                            batch = tissue_source_site)
+
+BL.counts.tx.corrected <- BL.counts.comb.corrected[rownames(BL.counts.tx),]
+BL.counts.rtx.corrected <- BL.counts.comb.corrected[rownames(BL.counts.rtx),]
+
+stopifnot(all(names(BL.counts.tx.corrected) == names(BL.counts.rtx.corrected)))
+stopifnot(all(names(BL.counts.tx.corrected) == names(BL.counts.tx)))
+stopifnot(all(names(BL.counts.tx.corrected) == rownames(BL_metadata)))
+
 ################################ COMBINE SAMPLES ###############################
 
 # combine .tx and .rtx counts for all lymphoma samples
 
-all.counts.rtx <- cbind(DLBCL.counts.rtx, BL.counts.rtx, FL.counts.rtx)
-all.counts.tx <- cbind(DLBCL.counts.tx, BL.counts.tx, FL.counts.tx)
+all.counts.rtx <- cbind(DLBCL.counts.rtx, BL.counts.rtx.corrected, FL.counts.rtx)
+all.counts.tx <- cbind(DLBCL.counts.tx, BL.counts.tx.corrected, FL.counts.tx)
 
 stopifnot(all(names(all.counts.tx) == names(all.counts.rtx)))
 
 # combine .tx and .rtx counts in the same matrices
 
 DLBCL.counts.comb <- rbind(DLBCL.counts.tx, DLBCL.counts.rtx)
-BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
+BL.counts.comb <- BL.counts.comb.corrected
 FL.counts.comb <- rbind(FL.counts.tx, FL.counts.rtx)
 all.counts.comb <- rbind(all.counts.tx, all.counts.rtx)
 GCB_Bulk.counts.comb <- rbind(GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx)
 GCB_Agirre.counts.comb <- rbind(GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx)
-
 
 
 ############################# SUBSET HERVs and L1s #############################
@@ -440,14 +466,14 @@ GCB_Agirre.counts.comb <- rbind(GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx)
 retro.hg38.v1 <- retro.hg38.v1 %>% remove_rownames %>% column_to_rownames(var="locus")
 
 DLBCL.counts.herv <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
-BL.counts.herv <- BL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
+BL.counts.herv <- BL.counts.rtx.corrected[retro.hg38.v1$te_class == 'LTR',]
 FL.counts.herv <- FL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 all.counts.herv <- all.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 GCB_Bulk.counts.herv <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 GCB_Agirre.counts.herv <- GCB_Agirre.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 
 DLBCL.counts.l1 <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
-BL.counts.l1 <- BL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
+BL.counts.l1 <- BL.counts.tx.corrected[retro.hg38.v1$te_class == 'LINE',]
 FL.counts.l1 <- FL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 all.counts.l1 <- all.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 GCB_Bulk.counts.l1 <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
@@ -478,5 +504,5 @@ save(all_metadata, DLBCL_metadata, BL_metadata, FL_metadata, bulk_metadata,
      agirre_metadata,
      file="r_outputs/01-metadata.Rdata")
 
-save(retro.hg38.v1, retro.annot, gene_table, 
+save(retro.hg38.v1, retro.annot, gene_table, retro.annot.v2,
      file="r_outputs/01-refs.Rdata")

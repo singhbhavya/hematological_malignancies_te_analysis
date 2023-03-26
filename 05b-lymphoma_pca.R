@@ -24,7 +24,7 @@ library(edgeR)
 library(ashr)
 library(cowplot)
 library(wesanderson)
-
+library(sva)
 
 ################################### LOAD DATA ##################################
 
@@ -284,10 +284,17 @@ BL.tform <- DESeq2::varianceStabilizingTransformation(BL.dds, blind=FALSE)
 BL.herv.pca.obj <-
   pca_standard(tform = BL.tform, 
                metadata = BL_metadata, 
-               var = 0.1)
-# 3 PCs for Elbow method
-# 3 PCs for Horn method
-# 1 PCs needed to explain 50 percent of variation
+               var = 0.7)
+
+# var = 0.1, 4, 19, 20
+# var = 0.3, 4, 18, 19
+# var = 0.5, 4, 18, 18
+# var = 0.7, 4, 15, 16
+# var = 0.8, 5, 15, 15
+# Final var 0.7:
+# 4 PCs for Elbow method
+# 15 PCs for Horn method
+# 16 PCs needed to explain 50 percent of variation
 
 
 ############################## BL BIPLOTS HERVs ################################
@@ -340,7 +347,7 @@ ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 6
 
 biplot(BL.herv.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -352,7 +359,10 @@ biplot(BL.herv.pca.obj,
        ellipse = FALSE,
        shape = "ebv_status",
        legendPosition = "right")  +
-  theme_cowplot()
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+ggsave("plots/05b-BL_hervs_biplot_pc1_pc2_gender.pdf", height = 6, width = 6)
 
 eigencorplot(BL.herv.pca.obj,
              metavars = c('ebv_status','clinical_variant','subgroup','gender',
@@ -400,9 +410,10 @@ BL.gonly.pca.obj <-
   pca_standard(tform = BL.gonly.tform, 
                metadata = BL_metadata, 
                var = 0.1)
-# 9 PCs for Elbow method
-# 34 PCs for Horn method
-# 14 PCs needed to explain 50 percent of variation
+# var 0.1, 6, 18, 12
+# var 0.3, 6, 18, 12
+# var 0.5 7, 18, 12
+# var 0.7 8, 12, 12
 
 all(rownames(BL.gonly.pca.obj$loadings) %in% rownames(gene_table))
 rownames(BL.gonly.pca.obj$loadings) <- 
@@ -414,7 +425,7 @@ rownames(BL.gonly.pca.obj$loadings) <-
 
 biplot(BL.gonly.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -431,7 +442,7 @@ biplot(BL.gonly.pca.obj,
 
 ggsave("plots/05b-BL_genes_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 6)
 
-# Biplot with COO call (only HERVs)
+# Biplot with EBV status + clinical variant (only genes)
 
 biplot(BL.gonly.pca.obj, 
        lab = NULL,
@@ -453,6 +464,47 @@ biplot(BL.gonly.pca.obj,
   theme(aspect.ratio = 1)
 
 ggsave("plots/05b-BL_genes_pc1_pc2_ebvclinvar.pdf", height = 6, width = 6)
+
+# Gender
+
+biplot(BL.gonly.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "gender",
+       ellipse = FALSE,
+       shape = "ebv_status",
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+ggsave("plots/05b-BL_genes_biplot_pc1_pc2_gender.pdf", height = 6, width = 6)
+
+############################## BL LOADINGS GENES ###############################
+
+rangeRetain <- 0.01
+PCAtools::plotloadings(BL.gonly.pca.obj,
+                       title=paste0("BL Genes loadings"),
+                       rangeRetain = rangeRetain,
+                       caption = paste0('Top ', rangeRetain * 100, '% variables'),
+                       subtitle = 'PC1-PC5',
+                       shapeSizeRange = c(3,3),    
+                       labSize = 3.0,    
+                       shape = 24,
+                       col = c('white', 'pink'),
+                       drawConnectors = TRUE
+)
+
+eigencorplot(BL.gonly.pca.obj,
+             metavars = c('ebv_status','clinical_variant','subgroup','gender',
+                          'tissue_source_site','tumor_biopsy','MYC_SV_partner',
+                          'subtype', 'Total_N_SSM', 'anatomic_site_classification'))
 
 
 ############################ BL DESEQ HERVs & GENES ############################
@@ -477,21 +529,22 @@ BL.g.pca.obj <-
   pca_standard(tform = BL.g.tform, 
                metadata = BL_metadata, 
                var = 0.1)
-# 6 PCs for Elbow method
-# 34 PCs for Horn method
-# 10 PCs needed to explain 50 percent of variation
+# var = 0.1
+# 5 PCs for Elbow method
+# 18 PCs for Horn method
+# 4 PCs needed to explain 50 percent of variation
 
 all(rownames(BL.g.pca.obj$loadings) %in% rownames(gene_table))
 rownames(BL.g.pca.obj$loadings) <- 
   gene_table[rownames(BL.g.pca.obj$loadings), 'display']
 
-############################## BL BIPLOTS HERVs ################################
+########################## BL BIPLOTS HERVs + GENES ############################
 
-## Biplot with projects (only HERVs)
+## Biplot with projects (HERVS + GENES)
 
 biplot(BL.g.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -512,7 +565,7 @@ ggsave("plots/05b-BL_hervsgenes_biplot_pc1_pc2_clinvariant.pdf", height = 6, wid
 
 biplot(BL.g.pca.obj, 
        lab = NULL,
-       showLoadings = TRUE,
+       showLoadings = FALSE,
        boxedLoadingsNames = TRUE,
        fillBoxedLoadings = alpha("white", 3/4),
        pointSize = 3, 
@@ -530,6 +583,26 @@ biplot(BL.g.pca.obj,
   theme(aspect.ratio = 1)
 
 ggsave("plots/05b-BL_hervsgenes_pc1_pc2_ebvclinvar.pdf", height = 6, width = 8)
+
+biplot(BL.g.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "gender",
+       ellipse = FALSE,
+       shape = "ebv_status",
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+ggsave("plots/05b-BL_genes_biplot_pc1_pc2_gender.pdf", height = 6, width = 6)
+
 
 ########################## BL LOADINGS HERVs & GENES ###########################
 
