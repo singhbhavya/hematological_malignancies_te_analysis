@@ -125,7 +125,7 @@ dev.off()
 ############################### SELECTED FEATURES ##############################
 
 # > selected_vars$lasso
-# [1] "HARLEQUIN_1q32.1" "HML5_2q14.3"      "ERVLB4_2q37.1a"   "ERVLE_3q29b" 
+# [1] "ERVL_1p34.2"  "ERVLB4_2p16.3" "MER4B_10q21.3" "ERVL_Xq21.1b"  "ERVLE_14q23.2"
 
 plot.counts <- function(df, gene) {
   
@@ -146,15 +146,16 @@ plot.counts <- function(df, gene) {
 }
 
 
-p1 <- plot.counts(dds_lrt, "HARLEQUIN_1q32.1")
-p2 <- plot.counts(dds_lrt, "HML5_2q14.3")
-p3 <- plot.counts(dds_lrt, "ERVLB4_2q37.1a")
-p4 <- plot.counts(dds_lrt, "ERVLE_3q29b")
+p1 <- plot.counts(dds_lrt, "ERVL_1p34.2")
+p2 <- plot.counts(dds_lrt, "ERVLB4_2p16.3")
+p3 <- plot.counts(dds_lrt, "MER4B_10q21.3")
+p4 <- plot.counts(dds_lrt, "ERVL_Xq21.1b")
+p5 <- plot.counts(dds_lrt, "ERVLE_14q23.2")
 
-pdf("plots/05m-all_lymphoma_selected_features.pdf", height=6, width=6)
-plot_grid(p1, p2, p3, p4,
+pdf("plots/05m-all_lymphoma_selected_features.pdf", height=6, width=9)
+plot_grid(p1, p2, p3, p4, p5,
           nrow = 2, 
-          ncol = 2,
+          ncol = 3,
           labels = "AUTO")
 dev.off()
 

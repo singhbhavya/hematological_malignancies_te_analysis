@@ -118,7 +118,11 @@ dev.off()
 
 ################################# FEATURE GRAPH ################################
 
-mat.sel <- mat[selected_vars$lasso, ]
+mat.sel <- mat[Reduce(intersect, 
+                      list(selected_vars$lrt, 
+                           selected_vars$boruta, 
+                           selected_vars$lasso)), ]
+
 rpart.fit <- rpart(y ~ . , data=data.frame(y=BL_metadata$clust.retro.k3, 
                                            t(mat.sel)),
                    method = 'class')
@@ -129,8 +133,9 @@ dev.off()
 
 ############################### SELECTED FEATURES ##############################
 
-# > selected_vars$lasso
-# [1] "MER101_16p12.2a" "HERVH48_8q24.13" "HERV3_14q32.33"  "HERVL40_4q31.3b"
+# > Reduce(intersect, list(selected_vars$lrt, selected_vars$boruta, selected_vars$lasso))
+# [1] "HML6_Yp11.2" "HERV3_Yp11.2a" "HERVL_Yp11.2a" "MER4_Yq11.221b""HARLEQUIN_Yq11.221c"
+# [6] "MER4_Yq11.221e"     
 
 plot.counts <- function(df, gene) {
   
@@ -155,15 +160,17 @@ plot.counts <- function(df, gene) {
 }
 
 
-p1 <- plot.counts(dds, "HERVH48_8q24.13")
-p2 <- plot.counts(dds, "MER101_16p12.2a")
-p3 <- plot.counts(dds, "HERV3_14q32.33")
-p4 <- plot.counts(dds, "HERVL40_4q31.3b")
+p1 <- plot.counts(dds, "HML6_Yp11.2")
+p2 <- plot.counts(dds, "HERV3_Yp11.2a")
+p3 <- plot.counts(dds, "HERVL_Yp11.2a")
+p4 <- plot.counts(dds, "MER4_Yq11.221b")
+p5 <- plot.counts(dds, "HARLEQUIN_Yq11.221c")
+p6 <- plot.counts(dds, "MER4_Yq11.221e")
 
-pdf("plots/05j-BL_lasso_selected_features.pdf", height=6, width=6)
-plot_grid(p1, p2, p3, p4,
+pdf("plots/05j-BL_lasso_selected_features.pdf", height=6, width=9)
+plot_grid(p1, p2, p3, p4, p5, p6,
           nrow = 2, 
-          ncol = 2,
+          ncol = 3,
           labels = "AUTO")
 dev.off()
 
@@ -182,7 +189,7 @@ reads.left %>%
 # # A tibble: 3 × 2
 # clust      name
 #<fct>     <dbl>
-#  C1    46060106.
-#  C2      265831.
-#  C3    40353822.
+#1 C1    46772097.
+#2 C2    43442928.
+#3 C3    46579209 
 

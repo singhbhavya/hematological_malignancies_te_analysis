@@ -115,7 +115,7 @@ cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
 
 # Annotation column
 df <- as.data.frame(BL_metadata[c("clust.retro.k3", "clinical_variant",
-                                  "ebv_status", "subgroup")])
+                                  "ebv_status", "subgroup", "gender")])
 
 # Create colors for each group
 annoCol <-  c(wes_palette("Chevalier1")[1], 
