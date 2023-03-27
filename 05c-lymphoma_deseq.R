@@ -203,7 +203,7 @@ dev.off()
 ########################### EXPLORE DESEQ BL HERVs #############################
 
 bl_res <- DESeq2::results(BL.dds, 
-                          name="clinical_variant_Sporadic.BL_vs_Endemic.BL")
+                          name="ebv_status_EBV.positive_vs_EBV.negative")
 summary(bl_res)
 # Order by p value
 bl.res.ordered <- bl_res[order(bl_res$padj),]
@@ -337,7 +337,7 @@ dev.off()
 ############################## BL HERV HEATMAPS ################################
 
 select <- rownames(bl.res05lf2[1:20,])
-df <- as.data.frame(colData(BL.dds)[,c("clinical_variant","ebv_status")])
+df <- as.data.frame(colData(BL.dds)[,c("clinical_variant","ebv_status", "gender")])
 
 cols <- rgb_gsea(palette = c("default"), n = 12, alpha = 0.7, reverse = FALSE)
 
@@ -369,7 +369,7 @@ dev.off()
 ######################## EXPLORE DESEQ BL HERVs & GENES ########################
 
 bl_res_all <- DESeq2::results(BL.g.dds, 
-                              name="clinical_variant_Sporadic.BL_vs_Endemic.BL")
+                              name="ebv_status_EBV.positive_vs_EBV.negative")
 rownames(bl_res_all) <- gene_table[rownames(bl_res_all), 'display']
 summary(bl_res_all)
 # Order by p value
@@ -400,7 +400,7 @@ bl.res05lf2.all <-
 
 ## Top 20 genes & HERVs
 select <- rownames(bl.res05lf2.all[1:20,])
-df <- as.data.frame(colData(BL.g.dds)[,c("clinical_variant","ebv_status")])
+df <- as.data.frame(colData(BL.g.dds)[,c("clinical_variant","ebv_status", "gender")])
 
 cols <- rgb_gsea(palette = c("default"), n = 12, alpha = 0.7, reverse = FALSE)
 

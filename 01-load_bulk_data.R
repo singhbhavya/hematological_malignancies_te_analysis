@@ -20,6 +20,7 @@ library(dplyr)
 library(rtracklayer)
 library(data.table)
 library(scopetools)
+library(sva)
 
 ############################# LOAD TE ANNOTATIONS ##############################
 
@@ -422,39 +423,49 @@ stopifnot(all(names(GCB_Agirre.counts.tx) == names(GCB_Agirre.counts.rtx)))
 
 ############################# BL BATCH CORRECTION ##############################
 
-BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
-tumor_biopsy = sapply(as.character(BL_metadata$tumor_biopsy), 
-                      switch, "frozen" = 1, "FFPE" = 2, "NA" = 3, USE.NAMES = F)
-tissue_source_site = sapply(as.character(BL_metadata$tissue_source_site), 
-                            switch, "Children's Oncology Group, USA" = 4,
-                            "St Mary's Hospital, Uganda" = 2, 
-                            "St. Jude Children's Research Hospital, USA" = 3, 
-                            "Uganda Cancer Institute, Uganda" = 1,
-                            USE.NAMES = F)
+# BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
+# tumor_biopsy = sapply(as.character(BL_metadata$tumor_biopsy), 
+#                       switch, "frozen" = 1, "FFPE" = 2, "NA" = 3, USE.NAMES = F)
+# BL_subtype = sapply(as.character(BL_metadata$subtype), 
+#                             switch, "Endemic BL EBV-negative" = 1,
+#                             "Endemic BL EBV-positive" = 2, 
+#                             "Sporadic BL EBV-negative" = 3, 
+#                             "Sporadic BL EBV-positive" = 4,
+#                             USE.NAMES = F)
+# sex = sapply(as.character(BL_metadata$gender), 
+#             switch, "Female" = 1,
+#             "Male" = 2, 
+#             USE.NAMES = F)
+# 
+# BL.counts.comb.corrected = ComBat_seq(counts = as.matrix(BL.counts.comb), 
+#                             batch = tumor_biopsy,
+#                             covar_mod = cbind(BL_subtype, sex),
+#                             full_mod = TRUE)
+# 
+# BL.counts.tx.corrected <- as.data.frame(BL.counts.comb.corrected[rownames(BL.counts.tx),])
+# BL.counts.rtx.corrected <- as.data.frame(BL.counts.comb.corrected[rownames(BL.counts.rtx),])
+# 
+# stopifnot(all(names(BL.counts.tx.corrected) == names(BL.counts.rtx.corrected)))
+# stopifnot(all(names(BL.counts.tx.corrected) == names(BL.counts.tx)))
+# stopifnot(all(names(BL.counts.tx.corrected) == rownames(BL_metadata)))
+# 
+# BL.counts.tx <- as.data.frame(BL.counts.tx.corrected)
+# BL.counts.rtx <- as.data.frame(BL.counts.rtx.corrected)
 
-BL.counts.comb.corrected = ComBat_seq(counts = as.matrix(BL.counts.comb), 
-                            batch = tissue_source_site)
-
-BL.counts.tx.corrected <- BL.counts.comb.corrected[rownames(BL.counts.tx),]
-BL.counts.rtx.corrected <- BL.counts.comb.corrected[rownames(BL.counts.rtx),]
-
-stopifnot(all(names(BL.counts.tx.corrected) == names(BL.counts.rtx.corrected)))
-stopifnot(all(names(BL.counts.tx.corrected) == names(BL.counts.tx)))
-stopifnot(all(names(BL.counts.tx.corrected) == rownames(BL_metadata)))
 
 ################################ COMBINE SAMPLES ###############################
 
 # combine .tx and .rtx counts for all lymphoma samples
 
-all.counts.rtx <- cbind(DLBCL.counts.rtx, BL.counts.rtx.corrected, FL.counts.rtx)
-all.counts.tx <- cbind(DLBCL.counts.tx, BL.counts.tx.corrected, FL.counts.tx)
+all.counts.rtx <- cbind(DLBCL.counts.rtx, BL.counts.rtx, FL.counts.rtx)
+all.counts.tx <- cbind(DLBCL.counts.tx, BL.counts.tx, FL.counts.tx)
 
 stopifnot(all(names(all.counts.tx) == names(all.counts.rtx)))
 
 # combine .tx and .rtx counts in the same matrices
 
 DLBCL.counts.comb <- rbind(DLBCL.counts.tx, DLBCL.counts.rtx)
-BL.counts.comb <- BL.counts.comb.corrected
+BL.counts.comb <- rbind(BL.counts.tx, BL.counts.rtx)
 FL.counts.comb <- rbind(FL.counts.tx, FL.counts.rtx)
 all.counts.comb <- rbind(all.counts.tx, all.counts.rtx)
 GCB_Bulk.counts.comb <- rbind(GCB_Bulk.counts.tx, GCB_Bulk.counts.rtx)
@@ -466,14 +477,14 @@ GCB_Agirre.counts.comb <- rbind(GCB_Agirre.counts.tx, GCB_Agirre.counts.rtx)
 retro.hg38.v1 <- retro.hg38.v1 %>% remove_rownames %>% column_to_rownames(var="locus")
 
 DLBCL.counts.herv <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
-BL.counts.herv <- BL.counts.rtx.corrected[retro.hg38.v1$te_class == 'LTR',]
+BL.counts.herv <- BL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 FL.counts.herv <- FL.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 all.counts.herv <- all.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 GCB_Bulk.counts.herv <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 GCB_Agirre.counts.herv <- GCB_Agirre.counts.rtx[retro.hg38.v1$te_class == 'LTR',]
 
 DLBCL.counts.l1 <- DLBCL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
-BL.counts.l1 <- BL.counts.tx.corrected[retro.hg38.v1$te_class == 'LINE',]
+BL.counts.l1 <- BL.counts.tx[retro.hg38.v1$te_class == 'LINE',]
 FL.counts.l1 <- FL.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 all.counts.l1 <- all.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
 GCB_Bulk.counts.l1 <- GCB_Bulk.counts.rtx[retro.hg38.v1$te_class == 'LINE',]
