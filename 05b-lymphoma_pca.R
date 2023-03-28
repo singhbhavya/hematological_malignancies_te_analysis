@@ -74,6 +74,8 @@ pca_standard <- function(tform, metadata, var) {
   cat(sprintf('%d PCs needed to explain %d percent of variation\n', 
               varline.x, varline))
   
+  print(screeplot)
+  
   return(pca.obj)
 }
 
@@ -622,6 +624,266 @@ PCAtools::plotloadings(BL.g.pca.obj,
 
 ggsave("plots/05b-BL_hervsgenes_loadings_plot.pdf", height = 10, width = 10)
 
+######################## BL HERVS ONLY WITHOUT Y CHROM #########################
+
+### DESeq2 (HERVs Only)
+
+hervs.to.keep <- intersect(rownames(BL.filt.herv), 
+                           retro.annot$locus[retro.annot$chrom != "chrY"])
+
+BL.filt.herv.no.y <- BL.filt.herv[hervs.to.keep,] 
+BL.countdat <- BL.filt.herv.no.y
+cat(sprintf('%d variables\n', nrow(BL.countdat)))
+
+stopifnot(all(colnames(BL.countdat) == rownames(BL_metadata)))
+
+BL.dds.no.y <- DESeq2::DESeqDataSetFromMatrix(countData = BL.countdat,
+                                         colData = BL_metadata,
+                                         design = ~ clinical_variant +
+                                           ebv_status)
+
+BL.dds.no.y <- DESeq2::DESeq(BL.dds.no.y, parallel=T)
+BL.tform.no.y <- DESeq2::varianceStabilizingTransformation(BL.dds.no.y, blind=FALSE)
+
+## PCA
+BL.herv.no.y.pca.obj <-
+  pca_standard(tform = BL.tform.no.y, 
+               metadata = BL_metadata, 
+               var = 0.5)
+
+# 0.1, 4, 20, 21
+# 0.2, 4, 20, 21
+# 0.3, 4, 20, 20
+# 0.5, 4, 19, 19
+# 0.7, 5, 17, 18
+
+######################### BL HERVS ONLY NO Y PCA PLOTS #########################
+
+biplot(BL.herv.no.y.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       ellipse = FALSE,
+       colby = "clinical_variant",
+       colkey = c("Endemic BL" = wes_palette("Zissou1")[2], 
+                  "Sporadic BL" = wes_palette("Zissou1")[4]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+ggsave("plots/05b-BL_hervs_no_y_biplot_pc1_pc2_clinvariant.pdf", height = 6, width = 6)
+
+biplot(BL.herv.no.y.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "ebv_status",
+       ellipse = FALSE,
+       shape = "clinical_variant", 
+       shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
+       colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
+                  "EBV-negative" = wes_palette("Darjeeling1")[4]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+ggsave("plots/05b-BL_hervs_no_y_biplot_pc1_pc2_ebvclinvar.pdf", height = 6, width = 6)
+
+biplot(BL.herv.no.y.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "gender",
+       ellipse = FALSE,
+       shape = "ebv_status",
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+ggsave("plots/05b-BL_hervs_no_y_biplot_pc1_pc2_gender.pdf", height = 6, width = 6)
+
+###################### BL SEPARATED BY MALE AND FEMALE #########################
+
+### DESeq2 (HERVs Only)
+
+BL_metadata_y <- BL_metadata[BL_metadata$gender == "Male",]
+BL_metadata_x <- BL_metadata[BL_metadata$gender == "Female",]
+
+BL.filt.herv.y <- BL.filt.herv[rownames(BL_metadata_y)]
+BL.filt.herv.x <- BL.filt.herv[rownames(BL_metadata_x)]
+
+stopifnot(all(colnames(BL.filt.herv.y) == rownames(BL_metadata_y)))
+stopifnot(all(colnames(BL.filt.herv.x) == rownames(BL_metadata_x)))
+
+BL.dds.y <- DESeq2::DESeqDataSetFromMatrix(countData = BL.filt.herv.y,
+                                         colData = BL_metadata_y,
+                                         design = ~ clinical_variant +
+                                           ebv_status)
+
+BL.dds.y <- DESeq2::DESeq(BL.dds.y, parallel=T)
+BL.tform.y <- DESeq2::varianceStabilizingTransformation(BL.dds.y, blind=FALSE)
+
+## PCA
+BL.herv.y.pca.obj <-
+  pca_standard(tform = BL.tform.y, 
+               metadata = BL_metadata_y, 
+               var = 0.1)
+
+# 0.1, 5, 13, 16
+# 0.2, 5, 13, 16,
+# 0.3, 5, 13, 15
+# 0.5, 6, 13, 5
+# 0.7, 6, 13, 14
+
+BL.dds.x <- DESeq2::DESeqDataSetFromMatrix(countData = BL.filt.herv.x,
+                                           colData = BL_metadata_x,
+                                           design = ~ clinical_variant +
+                                             ebv_status)
+
+BL.dds.x <- DESeq2::DESeq(BL.dds.x, parallel=T)
+BL.tform.x <- DESeq2::varianceStabilizingTransformation(BL.dds.x, blind=FALSE)
+
+## PCA
+BL.herv.x.pca.obj <-
+  pca_standard(tform = BL.tform.x, 
+               metadata = BL_metadata_x, 
+               var = 0.1)
+
+# 0.1, 2, 10, 12
+# 0.2, 2, 12, 12
+# 0.3, 2, 11, 11
+# 0.5, 41, 10, 11
+
+########################### BL HERVS ONLY Y/X BIPLOTS ##########################
+
+biplot(BL.herv.y.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "ebv_status",
+       ellipse = FALSE,
+       shape = "clinical_variant", 
+       shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
+       colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
+                  "EBV-negative" = wes_palette("Darjeeling1")[4]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+eigencorplot(BL.herv.y.pca.obj,
+             metavars = c('ebv_status','clinical_variant','subgroup',
+                          'tissue_source_site','tumor_biopsy','MYC_SV_partner',
+                          'subtype', 'Total_N_SSM', 'anatomic_site_classification'))
+
+biplot(BL.herv.x.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "ebv_status",
+       ellipse = FALSE,
+       shape = "clinical_variant", 
+       shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
+       colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
+                  "EBV-negative" = wes_palette("Darjeeling1")[4]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+
+eigencorplot(BL.herv.x.pca.obj,
+             metavars = c('ebv_status','clinical_variant','subgroup','gender',
+                          'tissue_source_site','tumor_biopsy','MYC_SV_partner',
+                          'subtype', 'Total_N_SSM', 'anatomic_site_classification'))
+
+############################# BL HERVS ONLY CHR 19 ############################# 
+
+### DESeq2 (HERVs Only)
+
+hervs.to.keep <- intersect(rownames(BL.filt.herv), 
+                           retro.annot$locus[retro.annot$chrom == "chr19"])
+
+BL.filt.herv.19 <- BL.filt.herv[hervs.to.keep,] 
+BL.countdat <- BL.filt.herv.19
+cat(sprintf('%d variables\n', nrow(BL.countdat)))
+
+stopifnot(all(colnames(BL.countdat) == rownames(BL_metadata)))
+
+BL.dds.19 <- DESeq2::DESeqDataSetFromMatrix(countData = BL.countdat,
+                                            colData = BL_metadata,
+                                            design = ~ clinical_variant +
+                                              ebv_status)
+
+BL.dds.19 <- DESeq2::DESeq(BL.dds.19, parallel=T)
+BL.tform.19 <- DESeq2::varianceStabilizingTransformation(BL.dds.19, blind=FALSE)
+
+## PCA
+BL.herv.19.pca.obj <-
+  pca_standard(tform = BL.tform.19, 
+               metadata = BL_metadata, 
+               var = 0.1)
+
+# 0.01, 10, 11, 9
+# 0.1, 10, 11, 9
+# 0.3, 10, 9, 8
+
+
+############################ BL HERVS ONLY 19 BIPLOTS ##########################
+
+biplot(BL.herv.19.pca.obj, 
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 4,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "ebv_status",
+       ellipse = FALSE,
+       shape = "clinical_variant", 
+       shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
+       colkey = c("EBV-positive" = wes_palette("Darjeeling1")[2], 
+                  "EBV-negative" = wes_palette("Darjeeling1")[4]),
+       legendPosition = "right")  +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+eigencorplot(BL.herv.19.pca.obj,
+             metavars = c('ebv_status','clinical_variant','subgroup','gender',
+                          'tissue_source_site','tumor_biopsy','MYC_SV_partner',
+                          'subtype', 'Total_N_SSM', 'anatomic_site_classification'))
+
 ################################ FL DESEQ HERVs ################################
 
 ### DESeq2 (HERVs Only)
@@ -646,6 +908,7 @@ FL.herv.pca.obj <-
 # 2 PCs for Elbow method
 # 4 PCs for Horn method
 # 4 PCs needed to explain 50 percent of variation
+
 
 ############################## FL BIPLOTS HERVs ################################
 

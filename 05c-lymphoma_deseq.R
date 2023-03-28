@@ -39,7 +39,7 @@ load("r_outputs/05b-all_lymphoma_pca_dds.Rdata")
 
 fc=2 # fold change
 l2fc=log2(fc) # log 2 fold change
-pval=0.05 # p value threshold
+pval=0.001 # p value threshold
 
 ########################## EXPLORE DESEQ DLBCL HERVs ###########################
 
@@ -355,7 +355,7 @@ dev.off()
 
 ## Top 100 HERVs
 select <- rownames(bl.res05lf2[1:100,])
-pdf("plots/05c-BL_deseq_ebvclinvar_top100_hervs_filtered.pdf", height=16, width=10)
+pdf("plots/05c-BL_deseq_ebvclinvar_top100_hervs_filtered.pdf", height=16, width=16)
 
 pheatmap(assay(BL.tform)[select,], cluster_rows=TRUE,
          show_rownames=TRUE,
