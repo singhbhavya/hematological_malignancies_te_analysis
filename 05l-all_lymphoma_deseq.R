@@ -303,3 +303,24 @@ sig_all_l <- sig
 
 save(upvars_all_l, upvars_all_l_hervs, downvars_all_l, downvars_all_l_hervs,
      sig_herv_all_l, sig_all_l, file = "r_outputs/05l-all_lymphoma_vars.Rdata")   
+
+################################# CLUSTER SIZES ################################
+
+load("r_outputs/02-all_lymphoma_filt_counts.Rdata")
+reads.left <- as.data.frame(colSums(all.counts.filt.comb))
+colnames(reads.left) <- c("reads")
+reads.left$sample <- rownames(reads.left)
+
+reads.left$clust <- all_metadata$cancer_type
+
+reads.left %>%
+  group_by(clust) %>%
+  summarise_at(vars(reads), list(name = mean))
+
+# A tibble: 3 × 2
+# clust      name
+# <chr>     <dbl>
+#   1 BL    46223018.
+# 2 DLBCL 46417908.
+# 3 FL    35957779.
+
