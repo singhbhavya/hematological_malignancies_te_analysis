@@ -77,6 +77,7 @@ pca_standard <- function(tform, metadata, var) {
   cat(sprintf('%d PCs needed to explain %d percent of variation\n', 
               varline.x, varline))
   
+  print(screeplot)
   return(pca.obj)
 }
 
@@ -88,9 +89,16 @@ pca_standard <- function(tform, metadata, var) {
 
 ################################ BL DESEQ HERVs ################################
 
+
+hervs.to.keep <- intersect(rownames(BL.filt.herv), 
+                           retro.annot$locus[retro.annot$chrom != "chrY"])
+
+BL.filt.herv.y <- BL.filt.herv[hervs.to.keep,] 
+
 ### DESeq2 (HERVs Only)
 
-BL.countdat <- BL.filt.herv
+# BL.countdat <- BL.filt.herv
+BL.countdat <- BL.filt.herv.y
 cat(sprintf('%d variables\n', nrow(BL.countdat)))
 
 stopifnot(all(colnames(BL.countdat) == rownames(BL_metadata)))
@@ -106,10 +114,11 @@ BL.tform <- DESeq2::varianceStabilizingTransformation(BL.dds, blind=FALSE)
 BL.herv.pca.obj <-
   pca_standard(tform = BL.tform, 
                metadata = BL_metadata, 
-               var = 0.7)
-# 4 PCs for Elbow method
-# 15 PCs for Horn method
-# 16 PCs needed to explain 50 percent of variation
+               var = 0.1)
+# var = 0.1, 4, 20, 21
+# var = 0.3, 4, 20, 20
+# var = 0.5, 4, 19, 19
+# var = 0.7, 5, 17, 18
 
 ################################## CLUSTERING ##################################
 
@@ -118,9 +127,9 @@ tDat <- assay(BL.tform)[BL.herv.pca.obj$xvars, ]
 cDat <- sweep(tDat, 1, apply(tDat, 1, median, na.rm=T))
 
 ccp.obj <- ConsensusClusterPlus(cDat, maxK=maxK, reps=1000, pItem=0.8, pFeature=0.8,
-                                title="plots/bl_icl", clusterAlg="km", distance='euclidean',
+                                title="plots/bl_icl_no_y", clusterAlg="km", distance='euclidean',
                                 seed=12345, plot="pdf")
-icl <- calcICL(ccp.obj, title="plots/bl_icl", plot='pdf')
+icl <- calcICL(ccp.obj, title="plots/bl_icl_no_y", plot='pdf')
 
 stopifnot(all(rownames(BL.herv.pca.obj$metadata) == names(ccp.obj[[2]]$consensusClass)))
 
@@ -143,8 +152,7 @@ wrap <- function(nclu) {
                          colkey = colkey,
                          ellipse = FALSE,
                          ellipseConf = 0.9,
-                         shape = "clinical_variant", 
-                         shapekey = c("Endemic BL" = 15, "Sporadic BL" = 8),
+                         shape = "subtype", 
                          hline = 0,
                          vline = 0,
                          legendPosition = 'right',
@@ -167,7 +175,7 @@ wrap <- function(nclu) {
               BL.herv.pca.obj$metadata$MYC_SV))
 }
 
-pdf("plots/05i-bl_cluster_biplot.pdf")
+pdf("plots/05i-bl_no_y_cluster_biplot.pdf")
 for(nclu in 2:maxK) {
   wrap(nclu)
 }
@@ -190,7 +198,7 @@ cplots <- lapply(2:maxK, function(nclu) {
 })
 cplots <- unlist(cplots, recursive = FALSE)
 
-pdf("plots/05i-bl_clusters_analysis.pdf", height=11.5, width=11.5)
+pdf("plots/05i-bl_no_y_clusters_analysis.pdf", height=11.5, width=11.5)
 gridExtra::marrangeGrob(grobs = cplots, layout_matrix=matrix(1:8,4,2,T))
 dev.off()
 
@@ -199,22 +207,25 @@ sil.score <- sapply(2:maxK, function(k) {
 })
 ggplot(data.frame(x=2:maxK, y=sil.score)) + geom_point(aes(x,y)) + geom_line(aes(x,y)) + 
   xlab("k (num clusters)") + ylab('average silhouette score') + theme_cowplot()
-ggsave("plots/05i_bl_clusters_sil_score.pdf")
+ggsave("plots/05i_bl_no_y_clusters_sil_score.pdf")
 
 
-pdf("plots/05i-BL_eigen.pdf", height=8, width=10)
+pdf("plots/05i-BL_no_y_eigen.pdf", height=8, width=10)
 PCAtools::eigencorplot(BL.herv.pca.obj,
                        metavars = c('ebv_status','clinical_variant','subgroup','gender',
                                     'tissue_source_site','MYC_SV_partner',
-                                    'subtype', 'Total_N_SSM', 'anatomic_site_classification',
-                                    "clust.retro.k3"),
+                                    'subtype', 'Total_N_SSM', 'anatomic_site_classification', 
+                                    "clust.retro.k2","clust.retro.k3", "clust.retro.k4"),
                        col=wes_palette("Zissou1", 12, type = "continuous"),
                        signifSymbols = c('****', '***', '**', '*', ''),
                        signifCutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, 1))
 dev.off()
 
 # Add clusters to metadata
-BL_metadata$clust.retro.k3 <- clust.df
+BL_metadata$clust.retro.k2 <- clust.df$clust.retro.k2
+BL_metadata$clust.retro.k3 <- clust.df$clust.retro.k3
+BL_metadata$clust.retro.k4 <- clust.df$clust.retro.k4
+
 
 ################################## SAVE FILES ##################################
 
