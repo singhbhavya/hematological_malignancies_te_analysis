@@ -184,7 +184,8 @@ cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
 
 # Annotation column
 df <- as.data.frame(BL_metadata[c("clust.retro.k2", "clinical_variant",
-                                  "ebv_status", "subgroup", "gender")])
+                                  "ebv_status", "subgroup", "gender",
+                                  "MYC_SV_partner")])
 
 # Create colors for each group
 annoCol.k2 <-  c(wes_palette("Chevalier1")[1], 
@@ -199,19 +200,25 @@ annoCol.subgroup <- wes_palette("Darjeeling2")
 names(annoCol.subgroup) <- c("DGG-BL", "IC-BL", "DLBCL-B", "DLBCL-C", "Q53-BL")
 annoCol.clinvar <- c(wes_palette("Darjeeling1")[1:2])
 names(annoCol.clinvar) <- c("Endemic BL", "Sporadic BL")
+annoCol.te.type <- c(wes_palette("IsleofDogs1")[1:3])
+names(annoCol.te.type) <- c("INTERGENIC","EXONIC","INTRONIC"  )
+annoCol.myc.sv <- c(wes_palette("IsleofDogs2")[1:4])
+names(annoCol.myc.sv) <- c("BCL6", "IGH", "IGK", "IGL")
 
 annoCol <- list(clust.retro.k2 = annoCol.k2,
                 gender = annoCol.gender,
                 ebv_status = annoCol.ebv,
                 clinical_variant = annoCol.clinvar,
-                subgroup = annoCol.subgroup)
+                subgroup = annoCol.subgroup,
+                TE_type = annoCol.te.type,
+                MYC_SV_partner = annoCol.myc.sv)
 
 ######################### UPREGULATED IN ALL GROUPS ############################
 
 top.genes.hervs <- rownames(up.binmat.BL.k2)
 top.hervs <- rownames(up.binmat.BL.k2.hervs)
 
-pdf("plots/05k-BL_k2_no_y_top_hervs_genes_upregulated_all.pdf", height=15, width=15)
+pdf("plots/05k-BL_k2_no_y_top_hervs_genes_upregulated_all.pdf", height=12, width=12)
 pheatmap(assay(BL.k2.tform)[top.genes.hervs,], 
          main="Upregulated Genes and HERvs, all clusters",
          cluster_rows=TRUE,
@@ -251,11 +258,14 @@ makeheatmap <- function(topgenes, ...) {
   annotation_col <- df
   cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
   
-  annotation_row <- data.frame(
-    row.names = rownames(mat),
-    Group=retro.annot[rownames(mat),]$family,
-    Chrom=retro.annot[rownames(mat),]$chrom
-  )
+  if (topgenes[1] %in% retro.annot.v2$Locus) {
+    annoRow <- as.data.frame(retro.annot.v2[,c("TE_type", "Locus")])
+    annoRow <- annoRow[topgenes,]
+    annoRow <- subset(annoRow, select = -c(2))
+    annotation_row <- annoRow
+    } else {
+    annotation_row <- NULL
+      }
   
   pheatmap(mat,
            color=cols,
@@ -263,6 +273,7 @@ makeheatmap <- function(topgenes, ...) {
            clustering_distance_rows = rowdist,
            clustering_method="average",
            annotation_col = df,
+           annotation_row = annotation_row,
            annotation_colors = annoCol,
            show_colnames=F, 
            show_rownames = T,
@@ -311,9 +322,9 @@ plot.counts <- function(df, gene) {
   title <- gene_table[gene,]$display
   as.data.frame(plotCounts(df, 
                            gene=gene, 
-                           intgroup="clust.retro.k3", 
+                           intgroup="clust.retro.k2", 
                            returnData = TRUE)) %>%
-    ggplot(aes(x=clust.retro.k3, y=count, fill=clust.retro.k3))  +
+    ggplot(aes(x=clust.retro.k2, y=count, fill=clust.retro.k2))  +
     geom_boxplot() +
     theme_pubr() +
     theme(legend.position="none",
@@ -321,13 +332,17 @@ plot.counts <- function(df, gene) {
     xlab("Cluster") +
     ylab("Counts") +
     scale_fill_manual(values = c("C1" = wes_palette("Chevalier1")[1], 
-                                 "C2" = wes_palette("Chevalier1")[2],
-                                 "C3" = wes_palette("Chevalier1")[3])) + 
+                                 "C2" = wes_palette("Chevalier1")[2])) + 
     scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
     ggtitle(title) + 
     theme(plot.title = element_text(hjust = 0.5),
           aspect.ratio = 1)
 }
+
+
+plot.counts(BL.k2.dds, "HARLEQUIN_7q32.1b")
+plot.counts(BL.k2.dds, "ERVLB4_3p24.1b")
+
 
 ################################### PATHWAYS ###################################
 
@@ -627,8 +642,8 @@ rm(rn)
 cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
 
 # Annotation column
-df <- as.data.frame(colData(BL.ebv.dds)[,c("clinical_variant","ebv_status", "subtype",
-                                           "subgroup")])
+df <- as.data.frame(colData(BL.ebvclin.dds)[,c("clinical_variant","ebv_status", "subtype",
+                                           "subgroup", "MYC_SV_partner", "gender")])
 
 
 ######################### UPREGULATED IN ALL GROUPS ############################
@@ -641,7 +656,7 @@ annoRow <- annoRow[top.hervs,]
 annoRow <- subset(annoRow, select = -c(2))
 
 pdf("plots/05k-BL_top_hervs_upregulated_all.pdf", height=10, width=10)
-pheatmap(assay(BL.ebv.tform)[top.hervs,], 
+pheatmap(assay(BL.ebvclin.herv.tform)[top.hervs,], 
          main="Upregulated HERVs, all clusters",
          cluster_rows=TRUE,
          show_rownames=FALSE,
@@ -652,12 +667,13 @@ pheatmap(assay(BL.ebv.tform)[top.hervs,],
          labels_row = gene_table[top.hervs,]$display,
          cluster_cols=TRUE, 
          treeheight_row=0,
-         annotation_col=df,
+         annotation_col = df,
+         annotation_colors = annoCol,
          annotation_row=annoRow)
 dev.off()
 
 pdf("plots/05f-gcb_agirre_top_hervs_genes_upregulated_all.pdf", height=10, width=10)
-pheatmap(assay(BL.ebv.tform)[top.genes.hervs,],
+pheatmap(assay(BL.ebvclin.tform)[top.genes.hervs,],
          main="Upregulated Genes and HERVs, all clusters",
          cluster_rows=TRUE,
          show_rownames=FALSE,
@@ -668,7 +684,17 @@ pheatmap(assay(BL.ebv.tform)[top.genes.hervs,],
          labels_row = gene_table[top.genes.hervs,]$display,
          cluster_cols=TRUE, 
          treeheight_row=0,
-         annotation_col=df)
+         annotation_col = df,
+         annotation_colors = annoCol)
 dev.off()
 
+
+for(clust in c("Endemic EBV Positive",
+               "Sporadic EBV Negative")) {
+  tg <- rownames(sig.subtype[[clust]][1:75,])
+  p <- makeheatmap(tg, main=paste0('Genes/HERVs DE in cluster ', clust))
+  pdf(paste0("plots/05k-BL_top_de_genes_hervs_", clust, ".pdf"), height=7, width=7)
+  print(p)
+  dev.off()
+}
 

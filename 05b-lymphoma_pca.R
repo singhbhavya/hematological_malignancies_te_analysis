@@ -86,6 +86,7 @@ pca_standard <- function(tform, metadata, var) {
 DLBCL_metadata$COO_class <- DLBCL_metadata$COO_class %>% 
   replace(is.na(.), "Unclass")
 
+
 DLBCL.countdat <- DLBCL.filt.herv
 cat(sprintf('%d variables\n', nrow(DLBCL.countdat)))
 
@@ -286,7 +287,7 @@ BL.tform <- DESeq2::varianceStabilizingTransformation(BL.dds, blind=FALSE)
 BL.herv.pca.obj <-
   pca_standard(tform = BL.tform, 
                metadata = BL_metadata, 
-               var = 0.7)
+               var = 0.1)
 
 # var = 0.1, 4, 19, 20
 # var = 0.3, 4, 18, 19
@@ -999,9 +1000,16 @@ ggsave("plots/05b-FL_hervsgenes_biplot_pc1_pc2_who.pdf", height = 6, width = 8)
 
 ### DESeq2 (HERVs Only)
 
+
 all_metadata <- all_metadata %>% replace(is.na(.), "Missing")
 
-all.countdat <- all.counts.filt.herv
+hervs.to.keep <- intersect(rownames(all.counts.filt.herv), 
+                           retro.annot$locus[retro.annot$chrom != "chrY"])
+
+all.counts.filt.herv.y <- all.counts.filt.herv[hervs.to.keep,] 
+
+
+all.countdat <- all.counts.filt.herv.y
 cat(sprintf('%d variables\n', nrow(all.countdat)))
 
 stopifnot(all(colnames(all.countdat) == rownames(all_metadata)))
@@ -1018,14 +1026,11 @@ all.herv.pca.obj <-
   pca_standard(tform = all.tform, 
                metadata = all_metadata, 
                var = 0.7)
-# 0.1, 8, 17, 1
-# 0.3, 8, 17, 1
-# 0.5, 19, 16, 1
-# 0.7, 9, 12, 1
-# 9 PCs for Elbow method
-# 16 PCs for Horn method
-# 1 PCs needed to explain 50 percent of variation
-
+# No Y: 0.1, 9, 16, 1, With Y:
+# No Y: 0.2, 8, 16, 1, With Y:
+# No Y: 0.3, 8, 16, 1, With Y:
+# No Y: 0.5, 8, 15, 1, With Y: 9, 16, 1
+# No Y: 0.7, 8, 11, 1, With Y: 9, 12, 1
 
 ############################## ALL LYMPHOMA BIPLOTS HERVs ################################
 
@@ -1042,9 +1047,17 @@ biplot(all.herv.pca.obj,
        lengthLoadingsArrowsFactor = 3,
        drawConnectors = TRUE,
        colby = "subtype",
-       colkey = c(wes_palette("FantasticFox1"),
-                  c(wes_palette("Moonrise3"),
-                    c(wes_palette("Moonrise2")))),
+       colkey = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
+                  "Sporadic BL EBV-positive" = "#006053",
+                  "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
+                  "Endemic BL EBV-negative" = "#ae5c00",
+                  "GCB" = "royalblue", 
+                  "ABC" = "red3", 
+                  "Unclass" = "lightblue", 
+                  "Missing" = "grey",
+                  "FOLLICULAR GRADE 1" = "#F1BB7B",
+                  "FOLLICULAR GRADE 2" = "#FD6467",
+                  "FOLLICULAR GRADE 3A" = "#5B1A18"),
        shape = "cancer_type", 
        shapekey = c("DLBCL" = 15, 
                     "BL" = 8,
@@ -1060,7 +1073,7 @@ ggsave("plots/05b-all_lymphoma_hervs_biplot_pc1_pc2_cancertype.pdf", height = 9,
 
 rangeRetain <- 0.01
 PCAtools::plotloadings(all.herv.pca.obj,
-                       title=paste0("All lympgoma HERV loadings"),
+                       title=paste0("All lymphoma HERV loadings"),
                        rangeRetain = rangeRetain,
                        caption = paste0('Top ', rangeRetain * 100, '% variables'),
                        subtitle = 'PC1-PC5',
@@ -1117,9 +1130,17 @@ biplot(all.g.pca.obj,
        lengthLoadingsArrowsFactor = 3,
        drawConnectors = TRUE,
        colby = "subtype",
-       colkey = c(wes_palette("FantasticFox1"),
-                  c(wes_palette("Moonrise3"),
-                    c(wes_palette("Moonrise2")))),
+       colkey = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
+                  "Sporadic BL EBV-positive" = "#006053",
+                  "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
+                  "Endemic BL EBV-negative" = "#ae5c00",
+                  "GCB" = "royalblue", 
+                  "ABC" = "red3", 
+                  "Unclass" = "lightblue", 
+                  "Missing" = "grey",
+                  "FOLLICULAR GRADE 1" = "#F1BB7B",
+                  "FOLLICULAR GRADE 2" = "#FD6467",
+                  "FOLLICULAR GRADE 3A" = "#5B1A18"),
        shape = "cancer_type", 
        shapekey = c("DLBCL" = 15, 
                     "BL" = 8,
