@@ -27,6 +27,7 @@ library(ComplexUpset)
 library(EnhancedVolcano)
 library(pheatmap)
 library(fgsea)
+library(viridis)
 
 ################################### LOAD DATA ##################################
 
@@ -44,7 +45,7 @@ DLBCL_metadata$clust.retro.k9 <- clust.df$clust.retro.k9
 
 ################################################################################
 ################################################################################
-#################################### CLUST 9 ###################################
+#################################### CLUST 7 ###################################
 ################################################################################
 ################################################################################
 
@@ -465,6 +466,7 @@ makeheatmap <- function(topgenes, ...) {
            clustering_method="average",
            annotation_col = df,
            annotation_colors = annoCol,
+           labels_row = gene_table[topgenes,]$display,
            show_colnames=F, 
            show_rownames = T,
            fontsize = 8, fontsize_row = 6, border_color = NA,
@@ -484,6 +486,13 @@ for(clust in names(sig.k7.herv)) {
   dev.off()
 }
 
+for(clust in names(sig.k7)) {
+  tg <- rownames(sig.k7[[clust]][1:75,])
+  p <- makeheatmap(tg, main=paste0('DE in cluster ', clust))
+  pdf(paste0("plots/05p-all_lymphoma_subtype_top_de_geeneshervs_", clust, ".pdf"), height=7, width=7)
+  print(p)
+  dev.off()
+}
 
 ################################### PATHWAYS ###################################
 
@@ -506,7 +515,10 @@ make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
   
   fgsea.ranks <- deframe(fgsea.res)
   
-  fgsea.out <- fgsea(pathways=pathways.hallmark, stats=fgsea.ranks, eps=0)
+  fgsea.out <- fgsea(pathways=pathways.hallmark, 
+                     stats=fgsea.ranks, 
+                     nPermSimple = 10000,
+                     eps=0)
   
   k4.fgseaResTidy <- k4.fgsea %>%
     as_tibble() %>%
@@ -528,7 +540,7 @@ fsgsea.hallmarks.k7 <- list(
   "C7.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C7, "C7", "hallmark")
 )
 
-
+pdf("plots/05q-DLBCL_k7_all_c_hallmarks.pdf", height=10, width=7)
 for(clust in names(fsgsea.hallmarks.k7)) {
   fgseaResTidy <- fsgsea.hallmarks.k7[[clust]] %>%
     as_tibble() %>%
@@ -545,6 +557,7 @@ for(clust in names(fsgsea.hallmarks.k7)) {
   
   print(p)
 }
+dev.off()
 
 fsgsea.hallmarks.k7.summ <- as.data.frame(do.call(cbind, 
                                                   lapply(fsgsea.hallmarks.k7, 
@@ -552,9 +565,15 @@ fsgsea.hallmarks.k7.summ <- as.data.frame(do.call(cbind,
 
 rownames(fsgsea.hallmarks.k7.summ) <- fsgsea.hallmarks.k7$C1.hallmark$pathway
 
-fsgsea.hallmarks.k7.summ <- as.data.frame(do.call(cbind, 
-                                                  lapply(fsgsea.hallmarks.k7, 
-                                                         function(x) x[, c("NES")])))
+pdf("plots/05q-DLBCL_k7_all_hallmarks_heatmap.pdf", height=10, width=6)
+pheatmap(fsgsea.hallmarks.k7.summ, 
+         cluster_rows=FALSE,
+         show_rownames=TRUE,
+         show_colnames = TRUE,
+         color = viridis_pal()(10),
+         cluster_cols=TRUE, 
+         treeheight_row=0)
+dev.off()
   
 ################################# IMMUNE FGSEA #################################
 
