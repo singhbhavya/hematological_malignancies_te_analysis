@@ -117,13 +117,13 @@ downvars <- lapply(sig[1:6], function(r) rownames(subset(r, log2FoldChange<0)))
 pdf("plots/05l-all_lymph_upset_upvars.pdf", height=5, width=7)
 upset(fromList(upvars), sets=c("DLBCL", "BL", "FL"),  
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
 pdf("plots/05l-all_lymph_upset_dnwars.pdf", height=5, width=7)
 upset(fromList(downvars), sets=c("DLBCL", "BL", "FL"),  
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
 up.binmat <- fromList(upvars)
@@ -146,13 +146,13 @@ downvars_hervs <- lapply(sig_herv[1:5], function(r) rownames(subset(r, log2FoldC
 pdf("plots/05l-all_lymph_upset_upvars_hervs.pdf", height=5, width=7)
 upset(fromList(upvars_hervs), sets=c("DLBCL", "BL", "FL"),  
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.5))
+      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.7))
 dev.off()
 
 pdf("plots/05l-all_lymph_upset_dnvars_hervs.pdf", height=5, width=7)
 upset(fromList(downvars_hervs), sets=c("DLBCL", "BL", "FL"),  
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.5))
+      text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.7))
 dev.off()
 
 up.binmat.hervs <- fromList(upvars_hervs)
@@ -179,8 +179,9 @@ df <- as.data.frame(colData(all.dds)[,c("cancer_type","subtype")])
 # Create colors for each group
 annoCol <-  pal_jco("default", alpha = 0.7)(3)
 names(annoCol) <- unique(df$cancer_type)
-annoCol2 <- c("#DD8D29", "#798E87", "#F4B5BD", "#9C964A", "#46ACC8", "#E2D200",
-              "#CDC08C", "#FAD77B", "#E58601", "#B40F20", "#85D4E3")
+annoCol2 <- c("red3", "lightblue", "royalblue", "grey",  wes_palette("Darjeeling1")[2], 
+              "#ae5c00", wes_palette("Darjeeling1")[4], "#006053",
+              "#F1BB7B", "#5B1A18", "#FD6467")
 names(annoCol2) <- unique(df$subtype)
 annoCol <- list(cancer_type = annoCol, subtype = annoCol2)
 
@@ -205,6 +206,23 @@ pheatmap(assay(all.dds)[top.hervs,],
          annotation_colors = annoCol)
 dev.off()
 
+pdf("plots/05l-all_lymphoma_top_genes_hervs_upregulated_all.pdf", height=10, width=10)
+pheatmap(assay(all.g.dds)[top.genes.hervs,], 
+         main="Upregulated HERVs, all clusters",
+         cluster_rows=TRUE,
+         show_rownames=FALSE,
+         show_colnames = FALSE,
+         color = cols,
+         scale="row",
+         breaks=seq(-3,3,length.out=14),
+         labels_row = gene_table[top.genes.hervs,]$display,
+         cluster_cols=TRUE, 
+         treeheight_row=0,
+         annotation_col=df,
+         annotation_colors = annoCol)
+dev.off()
+
+
 
 ########################### DE HERVs PER GC SITE ###############################
 
@@ -216,11 +234,14 @@ makeheatmap <- function(topgenes, ...) {
   annotation_col <- df
   cols <- rgb_gsea(palette = c("default"), n = 14, alpha = 0.7, reverse = FALSE)
   
-  annotation_row <- data.frame(
-    row.names = rownames(mat),
-    Group=retro.annot[rownames(mat),]$family,
-    Chrom=retro.annot[rownames(mat),]$chrom
-  )
+  if (topgenes[1] %in% retro.annot.v2$Locus) {
+    annoRow <- as.data.frame(retro.annot.v2[,c("TE_type", "Locus")])
+    annoRow <- annoRow[topgenes,]
+    annoRow <- subset(annoRow, select = -c(2))
+    annotation_row <- annoRow
+  } else {
+    annotation_row <- NULL
+  }
   
   pheatmap(mat,
            color=cols,

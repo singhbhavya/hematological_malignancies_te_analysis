@@ -539,7 +539,7 @@ upset(fromList(upvars.BL.subtype), sets=c("Endemic EBV Negative",
                                       "Sporadic EBV Negative", 
                                       "Sporadic EBV Positive"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
 upset(fromList(upvars.BL.subtype), sets=c("EBV Positive",
@@ -547,7 +547,7 @@ upset(fromList(upvars.BL.subtype), sets=c("EBV Positive",
                                           "Endemic", 
                                           "Sporadic"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 
 pdf("plots/05k-BL_subtype_downvars.pdf", height=5, width=7)
 upset(fromList(downvars.BL.subtype), sets=c("Endemic EBV Negative",
@@ -555,13 +555,13 @@ upset(fromList(downvars.BL.subtype), sets=c("Endemic EBV Negative",
                                         "Sporadic EBV Negative", 
                                         "Sporadic EBV Positive"),  
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
 upset(fromList(upvars.BL.subtype), sets=c("EBV Positive",
                                           "EBV Negative"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 
 upset(fromList(upvars.BL.subtype), sets=c("Endemic",
                                           "Sporadic"),
@@ -591,7 +591,7 @@ upset(fromList(upvars.BL.herv.subtype), sets=c("Endemic EBV Negative",
                                           "Sporadic EBV Negative", 
                                           "Sporadic EBV Positive"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
 upset(fromList(upvars.BL.herv.subtype), sets=c("EBV Positive",
@@ -599,7 +599,7 @@ upset(fromList(upvars.BL.herv.subtype), sets=c("EBV Positive",
                                           "Endemic", 
                                           "Sporadic"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 
 
 pdf("plots/05k-BL_subtype_herv_downvars.pdf", height=5, width=7)
@@ -608,18 +608,18 @@ upset(fromList(downvars.BL.herv.subtype), sets=c("Endemic EBV Negative",
                                             "Sporadic EBV Negative", 
                                             "Sporadic EBV Positive"),  
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
 upset(fromList(upvars.BL.herv.subtype), sets=c("EBV Positive",
                                           "EBV Negative"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 
 upset(fromList(upvars.BL.herv.subtype), sets=c("Endemic",
                                           "Sporadic"),
       keep.order = T, order.by='degree', decreasing=F,
-      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+      text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 
 up.binmat.BL.subtype.herv <- fromList(upvars.BL.herv.subtype)
 rn <- do.call(c, upvars.BL.herv.subtype)
@@ -655,7 +655,7 @@ annoRow <- as.data.frame(retro.annot.v2[,c("TE_type", "Locus")])
 annoRow <- annoRow[top.hervs,]
 annoRow <- subset(annoRow, select = -c(2))
 
-pdf("plots/05k-BL_top_hervs_upregulated_all.pdf", height=10, width=10)
+pdf("plots/05k-BL_subtype_top_hervs_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(BL.ebvclin.herv.tform)[top.hervs,], 
          main="Upregulated HERVs, all clusters",
          cluster_rows=TRUE,
@@ -672,7 +672,7 @@ pheatmap(assay(BL.ebvclin.herv.tform)[top.hervs,],
          annotation_row=annoRow)
 dev.off()
 
-pdf("plots/05f-gcb_agirre_top_hervs_genes_upregulated_all.pdf", height=10, width=10)
+pdf("plots/05k-BL_subtype_top_hervs_genes_upregulated_all.pdf", height=10, width=10)
 pheatmap(assay(BL.ebvclin.tform)[top.genes.hervs,],
          main="Upregulated Genes and HERVs, all clusters",
          cluster_rows=TRUE,

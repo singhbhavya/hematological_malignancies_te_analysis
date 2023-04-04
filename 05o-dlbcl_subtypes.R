@@ -415,9 +415,17 @@ print(table(DLBCL.herv.pca.obj$metadata$clust.retro.k9, DLBCL.herv.pca.obj$metad
 sink(file = NULL)
 
 
+# Add clusters to metadata
+DLBCL_metadata$clust.retro.k2 <- clust.df$clust.retro.k2
+DLBCL_metadata$clust.retro.k3 <- clust.df$clust.retro.k3
+DLBCL_metadata$clust.retro.k4 <- clust.df$clust.retro.k5
+DLBCL_metadata$clust.retro.k4 <- clust.df$clust.retro.k7
+DLBCL_metadata$clust.retro.k4 <- clust.df$clust.retro.k9
+
+
 ################################## SAVE FILES ##################################
 
-save(DLBCL.herv.pca.obj, ccp.obj, tDat, cDat, clust.df, 
+save(DLBCL.herv.pca.obj, ccp.obj, tDat, cDat, clust.df, DLBCL_metadata,
      file="r_outputs/05o-DLBCL_pca_ccp_clusters_metadata.Rdata")
 
 ################################################################################
@@ -585,4 +593,7 @@ print(table(DLBCL.int.ex.pca.obj$metadata$clust.retro.k9, DLBCL.int.ex.pca.obj$m
 sink(file = NULL)
 
 
+################################## SAVE FILES ##################################
 
+save(BL.herv.pca.obj, ccp.obj, tDat, cDat, clust.df, BL_metadata,
+     file="r_outputs/05i-BL_pca_ccp_clusters_metadata.Rdata")

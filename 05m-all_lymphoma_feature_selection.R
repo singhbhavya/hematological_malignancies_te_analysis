@@ -23,11 +23,19 @@ library(rpart.plot)
 ################################### LOAD DATA ##################################
 
 load("r_outputs/02-all_lymphoma_filt_counts.Rdata")
-
+load("r_outputs/01-refs.Rdata")
 
 #################################### DESEQ2 ####################################
 
-countDat <- all.counts.filt.herv
+all_metadata$subtype <- replace_na(all_metadata$subtype, replace = "Unclass")
+
+hervs.to.keep <- intersect(rownames(all.counts.filt.herv), 
+                           retro.annot$locus[retro.annot$chrom != "chrY"])
+
+all.counts.filt.herv.y <- all.counts.filt.herv[hervs.to.keep,] 
+
+countDat <- all.counts.filt.herv.y
+
 cat(sprintf('%d variables\n', nrow(countDat)))
 
 stopifnot(all(colnames(countDat) == rownames(all_metadata)))
@@ -131,18 +139,29 @@ plot.counts <- function(df, gene) {
   
   as.data.frame(plotCounts(df, 
                            gene=gene, 
-                           intgroup="cancer_type", 
+                           intgroup="subtype", 
                            returnData = TRUE)) %>%
-    ggplot(aes(x=cancer_type, y=count, fill=cancer_type))  +
-    geom_boxplot() +
+    ggplot(aes(x=subtype, y=count, fill=subtype))  +
+    geom_boxplot(notch = TRUE) +
     theme_pubr() +
     theme(legend.position="none",
           axis.text.x = element_text(angle=45, hjust=1)) +
-    xlab("cancer_type") +
+    xlab("subtype") +
     ylab("Counts") +
     ggtitle(gene) + 
     theme(plot.title = element_text(hjust = 0.5),
-          aspect.ratio = 1)
+          aspect.ratio = 1) +
+    scale_fill_manual(values = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
+                                 "Sporadic BL EBV-positive" = "#006053",
+                                 "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
+                                 "Endemic BL EBV-negative" = "#ae5c00",
+                                 "GCB" = "royalblue", 
+                                 "ABC" = "red3", 
+                                 "Unclass" = "lightblue", 
+                                 "Missing" = "grey",
+                                 "FOLLICULAR GRADE 1" = "#F1BB7B",
+                                 "FOLLICULAR GRADE 2" = "#FD6467",
+                                 "FOLLICULAR GRADE 3A" = "#5B1A18"))
 }
 
 
@@ -159,6 +178,39 @@ plot_grid(p1, p2, p3, p4, p5,
           labels = "AUTO")
 dev.off()
 
+pdf("plots/05m-all_lymphoma_HARLEQUIN_1q32.1.pdf", height=3, width=3)
+plot.counts(dds_lrt, "HARLEQUIN_1q32.1") # Weird one
+dev.off()
+
+pdf("plots/05m-all_lymphoma_LTR46_Xq11.1.pdf", height=3, width=3)
+plot.counts(dds_lrt, "LTR46_Xq11.1") # Upregulated in FL
+dev.off()
+
+pdf("plots/05m-all_lymphoma_upreg_DZ.pdf", height=3, width=9)
+plot_grid(plot.counts(dds_lrt, "HERVH_3q22.1e"), # Upregulated in DZ GCB, 
+          plot.counts(dds_lrt, "HML5_1q22"), # Upregulated in DZ GCB 
+          plot.counts(dds_lrt, "HERVFH21_1p36.31"),  # Upregulated in DZ Agirre
+          nrow = 1, 
+          ncol = 3)
+dev.off()
+
+
+plot_grid(plot.counts(dds_lrt, "HERVH_15q26.3b"), # Upregulated in BMPC Agirre
+          plot.counts(dds_lrt, "MER61_3q24a"), # Upregulated in PB Agirre
+          plot.counts(dds_lrt, "PABLB_2q31.1"), # Upregulated in PB Agirre
+          plot.counts(dds_lrt, "HERVP71A_15q24.2"),# Upregulated in PB Agirre
+          nrow = 2, 
+          ncol = 2)
+dev.off()
+
+pdf("plots/05m-all_lymphoma_BL_lasso_features.pdf", height=9, width=9)
+plot_grid(plot.counts(dds_lrt, "ERVLE_2p25.3c"),
+          plot.counts(dds_lrt, "MER61_4p16.3"), 
+          plot.counts(dds_lrt, "ERV316A3_2q21.2b"),
+          plot.counts(dds_lrt, "ERVLE_5p13.2c"),
+          nrow = 2, 
+          ncol = 2)
+dev.off()
 
 #################################### SAVE DATA #################################
 
