@@ -66,7 +66,7 @@ print(res.sum)
 surv_diff <- survival::survdiff(Surv(time, status) ~ clust.retro.k7, data = metadata)
 print(surv_diff)
 
-pdf("plots/06c-survival_nci_herv_clusters.pdf", height = 14, width=15)
+pdf("plots/06c-dlbcl_cluster.retro_survival.pdf", height = 10, width=10)
 
 herv_clusters <-
   ggsurvplot(fit,
@@ -94,4 +94,43 @@ herv_clusters$plot <- herv_clusters$plot +
   theme(legend.text = element_text(size = 15, color = "black", face = "bold"))
 
 herv_clusters
+dev.off()
 
+fit <- survfit(Surv(time, status) ~ COO_class, data = metadata)
+print(fit)
+res.sum <- surv_summary(fit)
+print(res.sum)
+surv_diff <- survdiff(Surv(time, status) ~ COO_class, data = metadata)
+print(surv_diff)
+
+
+pdf("plots/06c-survival_nci_coo.pdf", height = 7, width=15)
+
+coo <-
+  ggsurvplot(fit,
+             risk.table =  "abs_pct",
+             pval = TRUE,
+             break.time.by = 500,
+             conf.int = FALSE,
+             risk.table.col = "strata",
+             risk.table.y.text.col = T,
+             risk.table.y.text = FALSE,
+             linetype = "strata",
+             surv.median.line = "hv",
+             ncensor.plot = FALSE,
+             ggtheme = theme_bw(), # Change ggplot2 theme
+             palette = c("red3", "royalblue", "lightblue"),
+             legend.labs = 
+               c("ABC", "GCB", "Unclassified"),
+             font.x = c(20),
+             font.y = c(20),
+             font.tickslab = c(20),
+             size = 2,
+             tables.theme = clean_theme()) 
+
+coo$plot <- coo$plot + 
+  theme(legend.text = element_text(size = 30, color = "black", face = "bold"))
+
+coo
+
+dev.off()
