@@ -499,6 +499,8 @@ for(clust in names(sig.k7)) {
 pathways.hallmark <- gmtPathways("gsea/h.all.v2023.1.Hs.symbols.gmt")
 pathways.immune <- gmtPathways("gsea/c7.immunesigdb.v2023.1.Hs.symbols.gmt")
 pathways.bp <- gmtPathways("gsea/c5.go.bp.v2023.1.Hs.symbols.gmt")
+pathways.kegg <- gmtPathways("gsea/c2.cp.kegg.v2023.1.Hs.symbols.gmt.txt")
+pathways.biocarta <- gmtPathways("gsea/c2.cp.biocarta.v2023.1.Hs.symbols.gmt.txt")
 
 ################################ HALLMARK FGSEA ################################
 
@@ -515,7 +517,7 @@ make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
   
   fgsea.ranks <- deframe(fgsea.res)
   
-  fgsea.out <- fgsea(pathways=pathways.hallmark, 
+  fgsea.out <- fgsea(pathways=pathway, 
                      stats=fgsea.ranks, 
                      nPermSimple = 10000,
                      eps=0)
@@ -564,10 +566,12 @@ fsgsea.hallmarks.k7.summ <- as.data.frame(do.call(cbind,
                                            function(x) x[, c("NES")])))
 
 rownames(fsgsea.hallmarks.k7.summ) <- fsgsea.hallmarks.k7$C1.hallmark$pathway
+rownames(fsgsea.hallmarks.k7.summ) <- gsub("HALLMARK_","",rownames(fsgsea.hallmarks.k7.summ))
+colnames(fsgsea.hallmarks.k7.summ) <- gsub(".hallmark.NES","",colnames(fsgsea.hallmarks.k7.summ))
 
-pdf("plots/05q-DLBCL_k7_all_hallmarks_heatmap.pdf", height=10, width=6)
+pdf("plots/05q-DLBCL_k7_all_hallmarks_heatmap.pdf", height=10, width=5)
 pheatmap(fsgsea.hallmarks.k7.summ, 
-         cluster_rows=FALSE,
+         cluster_rows=TRUE,
          show_rownames=TRUE,
          show_colnames = TRUE,
          color = viridis_pal()(10),
@@ -577,53 +581,162 @@ dev.off()
   
 ################################# IMMUNE FGSEA #################################
 
-k2.immune.fgsea <- fgsea(pathways=pathways.immune, stats=k2.ranks, eps=0)
+fsgsea.immune.k7 <- list(
+  "C1" = make.fsgsea(pathways.immune, res.k7$C1, "C1", "immune"),
+  "C2" = make.fsgsea(pathways.immune, res.k7$C2, "C2", "immune"),
+  "C3" = make.fsgsea(pathways.immune, res.k7$C3, "C3", "immune"),
+  "C4" = make.fsgsea(pathways.immune, res.k7$C4, "C4", "immune"),
+  "C5" = make.fsgsea(pathways.immune, res.k7$C5, "C5", "immune"),
+  "C6" = make.fsgsea(pathways.immune, res.k7$C6, "C6", "immune"),
+  "C7" = make.fsgsea(pathways.immune, res.k7$C7, "C7", "immune")
+)
 
-k2.immune.fgseaResTidy <- k2.immune.fgsea %>%
-  as_tibble() %>%
-  arrange(desc(NES))
+pdf("plots/05q-DLBCL_k7_all_c_immune.pdf", height=10, width=7)
+for(clust in names(fsgsea.immune.k7)) {
+  fgseaResTidy.immune <- fsgsea.immune.k7[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fgseaResTidy.immune) <- fgseaResTidy.immune$pathway
+  fgseaResTidy.immune <- fgseaResTidy.immune[fgseaResTidy.immune$pathway %like% "GC", ]
+  
+  p <- ggplot(fgseaResTidy.immune, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+}
+dev.off()
 
-# Show in a nice table:
-k2.immune.fgseaResTidy %>% 
-  dplyr::select(-leadingEdge, -ES) %>% 
-  arrange(padj) %>% 
-  DT::datatable()
+fgseaResTidy.immune.summ <- as.data.frame(do.call(cbind, 
+                                                  lapply(fsgsea.immune.k7, 
+                                                         function(x) x[, c("NES")])))
+rownames(fgseaResTidy.immune.summ) <- fsgsea.immune.k7$C1$pathway
 
-k2.immune.pathways.subset <- k2.immune.fgseaResTidy[k2.immune.fgseaResTidy$pathway %like% "GC", ]
+fgseaResTidy.immune.summ <- fgseaResTidy.immune.summ[rownames(fgseaResTidy.immune.summ) %like% "GC", ]
 
-ggplot(k2.immune.fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.05)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
+colnames(fgseaResTidy.immune.summ) <- gsub(".NES","",colnames(fgseaResTidy.immune.summ))
 
-ggplot(k2.immune.pathways.subset, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.05)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
+pdf("plots/05q-DLBCL_k7_gc_immune_heatmap.pdf", height=10, width=5)
+pheatmap(fgseaResTidy.immune.summ, 
+         cluster_rows=TRUE,
+         show_rownames=TRUE,
+         show_colnames = TRUE,
+         color = viridis_pal()(10),
+         cluster_cols=TRUE, 
+         treeheight_row=0)
+dev.off()
 
-################################### BP FGSEA ###################################
+################################## KEGG FGSEA ##################################
 
-k2.bp.fgsea <- fgsea(pathways=pathways.bp, stats=k2.ranks, eps=0, 
-                     nPermSimple = 10000)
+fsgsea.kegg.k7 <- list(
+  "C1" = make.fsgsea(pathways.kegg, res.k7$C1, "C1", "KEGG"),
+  "C2" = make.fsgsea(pathways.kegg, res.k7$C2, "C2", "KEGG"),
+  "C3" = make.fsgsea(pathways.kegg, res.k7$C3, "C3", "KEGG"),
+  "C4" = make.fsgsea(pathways.kegg, res.k7$C4, "C4", "KEGG"),
+  "C5" = make.fsgsea(pathways.kegg, res.k7$C5, "C5", "KEGG"),
+  "C6" = make.fsgsea(pathways.kegg, res.k7$C6, "C6", "KEGG"),
+  "C7" = make.fsgsea(pathways.kegg, res.k7$C7, "C7", "KEGG")
+)
 
-k2.bp.fgseaResTidy <- k2.bp.fgsea %>%
-  as_tibble() %>%
-  arrange(desc(NES))
+pdf("plots/05q-DLBCL_k7_all_c_kegg.pdf", height=20, width=7)
+for(clust in names(fsgsea.kegg.k7)) {
+  fgseaResTidy.kegg <- fsgsea.kegg.k7[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fsgsea.kegg.k7[[clust]]) <- fsgsea.kegg.k7[[clust]]$pathway
+  
+  rownames(fgseaResTidy.kegg) <- fgseaResTidy.kegg$pathway
+  
+  p <- ggplot(fgseaResTidy.kegg, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+  
+  }
+dev.off()
 
-# Show in a nice table:
-k2.bp.fgseaResTidy %>% 
-  dplyr::select(-leadingEdge, -ES) %>% 
-  arrange(padj) %>% 
-  DT::datatable()
 
-ggplot(k2.bp.fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.001)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
+fgseaResTidy.kegg.summ <- as.data.frame(do.call(cbind, 
+                                                  lapply(fsgsea.kegg.k7, 
+                                                         function(x) x[, c("NES")])))
+rownames(fgseaResTidy.kegg.summ) <- fsgsea.kegg.k7$C1$pathway
+
+colnames(fgseaResTidy.kegg.summ) <- gsub(".NES","",colnames(fgseaResTidy.kegg.summ))
+
+pdf("plots/05q-DLBCL_k7_kegg_heatmap.pdf", height=35, width=10)
+pheatmap(fgseaResTidy.kegg.summ, 
+         cluster_rows=TRUE,
+         show_rownames=TRUE,
+         show_colnames = TRUE,
+         color = viridis_pal()(10),
+         cluster_cols=TRUE, 
+         treeheight_row=0)
+dev.off()
+
+################################ BIOCARTA FGSEA ################################
+
+fsgsea.biocarta.k7 <- list(
+  "C1" = make.fsgsea(pathways.biocarta, res.k7$C1, "C1", "Biocarta"),
+  "C2" = make.fsgsea(pathways.biocarta, res.k7$C2, "C2", "Biocarta"),
+  "C3" = make.fsgsea(pathways.biocarta, res.k7$C3, "C3", "Biocarta"),
+  "C4" = make.fsgsea(pathways.biocarta, res.k7$C4, "C4", "Biocarta"),
+  "C5" = make.fsgsea(pathways.biocarta, res.k7$C5, "C5", "Biocarta"),
+  "C6" = make.fsgsea(pathways.biocarta, res.k7$C6, "C6", "Biocarta"),
+  "C7" = make.fsgsea(pathways.biocarta, res.k7$C7, "C7", "Biocarta")
+)
+
+pdf("plots/05q-DLBCL_k7_all_c_biocarta.pdf", height=30, width=7)
+for(clust in names(fsgsea.biocarta.k7)) {
+  fgseaResTidy.biocarta <- fsgsea.biocarta.k7[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fsgsea.biocarta.k7[[clust]]) <- fsgsea.biocarta.k7[[clust]]$pathway
+  
+  rownames(fgseaResTidy.biocarta) <- fgseaResTidy.biocarta$pathway
+  
+  p <- ggplot(fgseaResTidy.biocarta, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+  
+}
+dev.off()
+
+for(clust in names(fsgsea.biocarta.k7)) {
+  
+  fsgsea.biocarta.k7[[clust]]$NES[fsgsea.biocarta.k7[[clust]]$padj >= 0.05] <- NA 
+}
+
+fgseaResTidy.biocarta.summ <- as.data.frame(do.call(cbind, 
+                                                lapply(fsgsea.biocarta.k7, 
+                                                       function(x) x[, c("NES")])))
+rownames(fgseaResTidy.biocarta.summ) <- fsgsea.biocarta.k7$C1$pathway
+
+colnames(fgseaResTidy.biocarta.summ) <- gsub(".NES","",colnames(fgseaResTidy.biocarta.summ))
+fgseaResTidy.biocarta.summ <- 
+  fgseaResTidy.biocarta.summ[rowSums(is.na(fgseaResTidy.biocarta.summ)) != ncol(fgseaResTidy.biocarta.summ), ]
+
+pdf("plots/05q-DLBCL_k7_biocarta_heatmap.pdf", height=40, width=10)
+pheatmap(data.matrix(fgseaResTidy.biocarta.summ), 
+         cluster_rows=FALSE,
+         show_rownames=TRUE,
+         show_colnames = TRUE,
+         color = viridis_pal()(10),
+         cluster_cols=FALSE, 
+         treeheight_row=0)
+dev.off()
 
