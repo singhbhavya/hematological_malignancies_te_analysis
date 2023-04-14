@@ -6,10 +6,30 @@
 
 ## Plan:
 ##
+#################################### SETUP #####################################
+
+library(knitr)
+library(tidyverse)
+library(matrixStats)
+library(data.table)
+library(PCAtools)
+library(DESeq2)
+library(ggplot2)
+library(ggsci)
+library(ggpubr)
+library(edgeR)
+library(ashr)
+library(cowplot)
+library(wesanderson)
+library(UpSetR)
+library(ComplexUpset)
+library(EnhancedVolcano)
+library(pheatmap)
+library(fgsea)
+library(viridis)
 
 #################################### SETUP #####################################
 
-load("r_outputs/05f-agirre_vars_naive.Rdata")
 load("r_outputs/05l-all_lymphoma_vars.Rdata")  
 load("r_outputs/02-all_lymphoma_filt_counts.Rdata")
 load("r_outputs/01-refs.Rdata")
@@ -45,6 +65,21 @@ all.dds <- DESeq2::DESeqDataSetFromMatrix(countData = all.countdat,
 
 all.dds <- DESeq2::DESeq(all.dds, parallel=T)
 all.tform <- DESeq2::varianceStabilizingTransformation(all.dds, blind=FALSE)
+
+############################# SUBTYPE DESEQ GENES ##############################
+
+all.countdat <- all.counts.filt.comb
+cat(sprintf('%d variables\n', nrow(all.countdat)))
+
+stopifnot(all(colnames(all.countdat) == rownames(all_metadata)))
+
+all.g.dds <- DESeq2::DESeqDataSetFromMatrix(countData = all.countdat,
+                                          colData = all_metadata,
+                                          design = ~ subtype + 0)
+
+all.g.dds <- DESeq2::DESeq(all.g.dds, parallel=T)
+all.g.tform <- DESeq2::varianceStabilizingTransformation(all.g.dds, blind=FALSE)
+
 
 ############################### TOP HERVs ONLY #################################
 
@@ -88,6 +123,53 @@ for (n in names(sig_herv)) {
   cat("\n#--- Contrast", n, "---#\n")
   print(head(sig_herv[[n]]))
 }
+
+############################# TOP GENES AND HERVS ############################## 
+
+all_res <- list(
+  "DLBCL ABC" = DESeq2::results(all.g.dds, contrast=c(+1, -1/7, -1/7, -1/7, -1/7, -1/7, 
+                                                    -1/7, -1/7), alpha=pval),
+  "BL Endemic EBV Negative" = DESeq2::results(all.g.dds, contrast=c(-1/7, +1, -1/7, -1/7, -1/7, -1/7, 
+                                                                  -1/7, -1/7), alpha=pval),
+  "BL Endemic EBV Positive" = DESeq2::results(all.g.dds, contrast=c(-1/7, -1/7, +1, -1/7, -1/7, -1/7, 
+                                                                  -1/7, -1/7), alpha=pval),
+  "FL" = DESeq2::results(all.g.dds, contrast=c(-1/7, -1/7, -1/7, +1, -1/7, -1/7, 
+                                             -1/7, -1/7), alpha=pval),
+  "DLBCL GCB" = DESeq2::results(all.g.dds, contrast=c(-1/7, -1/7, -1/7, -1/7, +1, -1/7, 
+                                                    -1/7, -1/7), alpha=pval),
+  "BL Sporadic EBV Negative" = DESeq2::results(all.g.dds, contrast=c(-1/7, -1/7, -1/7, -1/7, -1/7, +1, 
+                                                                   -1/7, -1/7), alpha=pval),
+  "BL Sporadic EBV Positive" = DESeq2::results(all.g.dds, contrast=c(-1/7, -1/7, -1/7, -1/7, -1/7, -1/7, 
+                                                                   +1, -1/7), alpha=pval),
+  "DLBCL Unclass" = DESeq2::results(all.g.dds, contrast=c(-1/7, -1/7, -1/7, -1/7, -1/7, -1/7, 
+                                                        -1/7, +1), alpha=pval)
+)
+
+all_res <- lapply(all_res, function(r) {
+  r$display <- gene_table[rownames(r),]$display
+  r$class <- gene_table[rownames(r),]$gene_type
+  r
+})
+
+
+sig <- lapply(all_res, function(r) {
+  s <- subset(r, padj < pval & abs(log2FoldChange) > lfc.cutoff)
+  s[order(s$padj),]
+})
+
+for (n in names(sig)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  summary(sig[[n]])
+}
+
+for (n in names(sig)) {
+  cat("\n#--- Contrast", n, "---#\n")
+  print(head(sig[[n]]))
+}
+
+upvars.g <- lapply(sig[1:8], function(r) rownames(subset(r, log2FoldChange>0)))
+downvars.g <- lapply(sig[1:8], function(r) rownames(subset(r, log2FoldChange<0)))
+allvars.g <- lapply(sig[1:8], function(r) rownames(subset(r, log2FoldChange>0 | log2FoldChange<0)))
 
 
 ############################ UPSET GENES & HERVS ###############################
@@ -133,9 +215,6 @@ rm(rn)
 all.binmat.unique <- subset(all.binmat, rowSums(all.binmat, na.rm = TRUE) == 1)
 
 intersect(rownames(all.binmat.unique), sig_herv$`DLBCL ABC`$display)
-
-cor.test(samp_tes[,2], samp_tes[,3], 
-         method="spearman", exact = FALSE)
 
 
 ################################# HEATMAPS #####################################
@@ -218,4 +297,101 @@ for(clust in names(sig_herv)) {
   print(p)
   dev.off()
 }
+
+################################### PATHWAYS ###################################
+
+pathways.hallmark <- gmtPathways("gsea/h.all.v2023.1.Hs.symbols.gmt")
+pathways.immune <- gmtPathways("gsea/c7.immunesigdb.v2023.1.Hs.symbols.gmt")
+pathways.bp <- gmtPathways("gsea/c5.go.bp.v2023.1.Hs.symbols.gmt")
+pathways.kegg <- gmtPathways("gsea/c2.cp.kegg.v2023.1.Hs.symbols.gmt.txt")
+pathways.biocarta <- gmtPathways("gsea/c2.cp.biocarta.v2023.1.Hs.symbols.gmt.txt")
+
+################################ FGSEA FUNCTION ################################
+
+make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
+  
+  fgsea.res$SYMBOL <- gene_table[rownames(fgsea.res),]$display
+  
+  fgsea.res <- as.data.frame(fgsea.res) %>% 
+    dplyr::select(SYMBOL, stat) %>% 
+    na.omit() %>% 
+    distinct() %>% 
+    group_by(SYMBOL) %>% 
+    summarize(stat=mean(stat))
+  
+  fgsea.ranks <- deframe(fgsea.res)
+  
+  fgsea.out <- fgsea(pathways=pathway, 
+                     stats=fgsea.ranks, 
+                     nPermSimple = 10000,
+                     eps=0)
+  
+  return(fgsea.out)
+  
+  assign(paste0(clust_name, ".", pathway_name, ".fgsea.out"), fgsea.out, envir = .GlobalEnv )
+}
+
+################################# B CELL FGSEA #################################
+
+load("r_outputs/05f-agirre_vars.Rdata")
+
+gene.sets.b.cell <- lapply(upvars_agirre[1:6], function(r) gene_table[r[1:150],]$display)
+herv.sets.b.cell <- lapply(upvars_agirre_hervs[1:6], function(r) r[1:25])
+
+gene.herv.sets.b.cell <- list("DZ" = append(gene.sets.b.cell$DZ, herv.sets.b.cell$DZ),
+                              "LZ" = append(gene.sets.b.cell$LZ, herv.sets.b.cell$LZ),
+                              "PB" = append(gene.sets.b.cell$PB, herv.sets.b.cell$PB),
+                              "BMPC" = append(gene.sets.b.cell$BMPC, herv.sets.b.cell$BMPC),
+                              "NB" = append(gene.sets.b.cell$NB, herv.sets.b.cell$NB),
+                              "MB" = append(gene.sets.b.cell$MB, herv.sets.b.cell$MB)
+)
+
+b.cell.all.lymph <- list(
+  "DLBCL ABC" = make.fsgsea(gene.herv.sets.b.cell, all_res$`DLBCL ABC`, "DLBCL ABC", "b.cell"),
+  "BL Endemic EBV Negative" = make.fsgsea(gene.herv.sets.b.cell, all_res$`BL Endemic EBV Negative`, "BL Endemic EBV Negative", "b.cell"),
+  "BL Endemic EBV Positive" = make.fsgsea(gene.herv.sets.b.cell, all_res$`BL Endemic EBV Positive`, "BL Endemic EBV Positive", "b.cell"),
+  "FL" = make.fsgsea(gene.herv.sets.b.cell, all_res$FL, "FL", "b.cell"),
+  "DLBCL GCB" = make.fsgsea(gene.herv.sets.b.cell, all_res$`DLBCL GCB`, "DLBCL GCB", "b.cell"),
+  "BL Sporadic EBV Negative" = make.fsgsea(gene.herv.sets.b.cell, all_res$`BL Sporadic EBV Negative`, "BL Sporadic EBV Negative", "b.cell"),
+  "BL Sporadic EBV Positive" = make.fsgsea(gene.herv.sets.b.cell, all_res$`BL Sporadic EBV Positive`, "BL Sporadic EBV Positive", "b.cell"),
+  "DLBCL Unclass" = make.fsgsea(gene.herv.sets.b.cell, all_res$`DLBCL Unclass`, "DLBCL Unclass", "b.cell")
+)
+
+pdf("plots/05p-all_lymph_bcell.pdf", height=10, width=7)
+for(clust in names(b.cell.all.lymph)) {
+  fgseaResTidy <- b.cell.all.lymph[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fgseaResTidy) <- fgseaResTidy$pathway
+  
+  p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+}
+dev.off()
+
+# Get longform df
+b.cell.all.lymph.summary <- rbindlist(b.cell.all.lymph, idcol = "index")
+
+
+pdf("plots/05p-all_lymph_bcell_bubble.pdf", height=5, width=6)
+ggplot(b.cell.all.lymph.summary, aes(x = index, 
+                                     y = pathway, 
+                                     size = -log(padj), 
+                                     color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("Lymphoma Subtype") +
+  ylab("B Cell Signature") +
+  theme(plot.margin = unit(c(1.5,1.5,1.5,1.5), "cm"))
+dev.off()
 
