@@ -502,7 +502,7 @@ pathways.bp <- gmtPathways("gsea/c5.go.bp.v2023.1.Hs.symbols.gmt")
 pathways.kegg <- gmtPathways("gsea/c2.cp.kegg.v2023.1.Hs.symbols.gmt.txt")
 pathways.biocarta <- gmtPathways("gsea/c2.cp.biocarta.v2023.1.Hs.symbols.gmt.txt")
 
-################################ HALLMARK FGSEA ################################
+################################ FGSEA FUNCTION ################################
 
 make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
   
@@ -531,6 +531,7 @@ make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
   assign(paste0(clust_name, ".", pathway_name, ".fgsea.out"), fgsea.out, envir = .GlobalEnv )
   }
 
+################################ HALLMARK FGSEA ################################
 
 fsgsea.hallmarks.k7 <- list(
   "C1.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C1, "C1", "hallmark"),
@@ -561,24 +562,53 @@ for(clust in names(fsgsea.hallmarks.k7)) {
 }
 dev.off()
 
+# Get NES 
 fsgsea.hallmarks.k7.summ <- as.data.frame(do.call(cbind, 
                                                   lapply(fsgsea.hallmarks.k7, 
                                            function(x) x[, c("NES")])))
 
+# Recode NES summary dataframe
 rownames(fsgsea.hallmarks.k7.summ) <- fsgsea.hallmarks.k7$C1.hallmark$pathway
 rownames(fsgsea.hallmarks.k7.summ) <- gsub("HALLMARK_","",rownames(fsgsea.hallmarks.k7.summ))
 colnames(fsgsea.hallmarks.k7.summ) <- gsub(".hallmark.NES","",colnames(fsgsea.hallmarks.k7.summ))
+fsgsea.hallmarks.k7.summ <- 
+  fsgsea.hallmarks.k7.summ[rowSums(is.na(fsgsea.hallmarks.k7.summ)) != ncol(fsgsea.hallmarks.k7.summ), ]
+
+
+# Get longform df
+fsgsea.hallmarks.k7.summary <- rbindlist(fsgsea.hallmarks.k7, idcol = "index")
+
+# Recode df
+fsgsea.hallmarks.k7.summary$pathway <- gsub("HALLMARK_","",fsgsea.hallmarks.k7.summary$pathway)
+fsgsea.hallmarks.k7.summary$pathway <- gsub("_"," ",fsgsea.hallmarks.k7.summary$pathway)
+fsgsea.hallmarks.k7.summary$index <- gsub(".hallmark","",fsgsea.hallmarks.k7.summary$index)
+
 
 pdf("plots/05q-DLBCL_k7_all_hallmarks_heatmap.pdf", height=10, width=5)
 pheatmap(fsgsea.hallmarks.k7.summ, 
-         cluster_rows=TRUE,
+         cluster_rows=FALSE,
          show_rownames=TRUE,
          show_colnames = TRUE,
          color = viridis_pal()(10),
          cluster_cols=TRUE, 
          treeheight_row=0)
 dev.off()
-  
+
+pdf("plots/05q-DLBCL_k7_all_hallmarks_bubble.pdf", height=10, width=7.5)
+ggplot(fsgsea.hallmarks.k7.summary, aes(x = index, 
+                                        y = pathway, 
+                                        size = -log(padj), 
+                                        color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("Hallmark Pathway") 
+dev.off()
+
+
 ################################# IMMUNE FGSEA #################################
 
 fsgsea.immune.k7 <- list(
@@ -665,16 +695,23 @@ for(clust in names(fsgsea.kegg.k7)) {
 dev.off()
 
 
+for(clust in names(fsgsea.kegg.k7)) {
+  
+  fsgsea.kegg.k7[[clust]]$NES[fsgsea.kegg.k7[[clust]]$padj >= 0.05] <- NA 
+}
+
 fgseaResTidy.kegg.summ <- as.data.frame(do.call(cbind, 
                                                   lapply(fsgsea.kegg.k7, 
                                                          function(x) x[, c("NES")])))
 rownames(fgseaResTidy.kegg.summ) <- fsgsea.kegg.k7$C1$pathway
-
+rownames(fgseaResTidy.kegg.summ) <- gsub("KEGG_","",rownames(fgseaResTidy.kegg.summ))
 colnames(fgseaResTidy.kegg.summ) <- gsub(".NES","",colnames(fgseaResTidy.kegg.summ))
+fgseaResTidy.kegg.summ <- 
+  fgseaResTidy.kegg.summ[rowSums(is.na(fgseaResTidy.kegg.summ)) != ncol(fgseaResTidy.kegg.summ), ]
 
-pdf("plots/05q-DLBCL_k7_kegg_heatmap.pdf", height=35, width=10)
+pdf("plots/05q-DLBCL_k7_kegg_heatmap.pdf", height=35, width=7)
 pheatmap(fgseaResTidy.kegg.summ, 
-         cluster_rows=TRUE,
+         cluster_rows=FALSE,
          show_rownames=TRUE,
          show_colnames = TRUE,
          color = viridis_pal()(10),
@@ -738,5 +775,68 @@ pheatmap(data.matrix(fgseaResTidy.biocarta.summ),
          color = viridis_pal()(10),
          cluster_cols=FALSE, 
          treeheight_row=0)
+dev.off()
+
+
+################################# B CELL FGSEA #################################
+
+load("r_outputs/05f-agirre_vars.Rdata")
+
+gene.sets.b.cell <- lapply(upvars_agirre[1:6], function(r) gene_table[r[1:150],]$display)
+herv.sets.b.cell <- lapply(upvars_agirre_hervs[1:6], function(r) r[1:25])
+
+gene.herv.sets.b.cell <- list("DZ" = append(gene.sets.b.cell$DZ, herv.sets.b.cell$DZ),
+                              "LZ" = append(gene.sets.b.cell$LZ, herv.sets.b.cell$LZ),
+                              "PB" = append(gene.sets.b.cell$PB, herv.sets.b.cell$PB),
+                              "BMPC" = append(gene.sets.b.cell$BMPC, herv.sets.b.cell$BMPC),
+                              "NB" = append(gene.sets.b.cell$NB, herv.sets.b.cell$NB),
+                              "MB" = append(gene.sets.b.cell$MB, herv.sets.b.cell$MB)
+                              )
+ 
+b.cell.k7 <- list(
+  "C1" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C1, "C1", "b.cell"),
+  "C2" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C2, "C2", "b.cell"),
+  "C3" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C3, "C3", "b.cell"),
+  "C4" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C4, "C4", "b.cell"),
+  "C5" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C5, "C5", "b.cell"),
+  "C6" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C6, "C6", "b.cell"),
+  "C7" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C7, "C7", "b.cell")
+)
+
+pdf("plots/05q-DLBCL_k7_all_c_bcell.pdf", height=10, width=7)
+for(clust in names(b.cell.k7)) {
+  fgseaResTidy <- b.cell.k7[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fgseaResTidy) <- fgseaResTidy$pathway
+  
+  p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+}
+dev.off()
+
+# Get longform df
+fsgsea.b.cell.k7.summary <- rbindlist(b.cell.k7, idcol = "index")
+
+
+pdf("plots/05q-DLBCL_k7_bcell_bubble.pdf", height=5, width=6)
+ggplot(fsgsea.b.cell.k7.summary, aes(x = index, 
+                                        y = pathway, 
+                                        size = -log(padj), 
+                                        color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 15)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("B Cell Signature") 
 dev.off()
 
