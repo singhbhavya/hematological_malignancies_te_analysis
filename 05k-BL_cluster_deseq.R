@@ -161,7 +161,7 @@ pdf("plots/05k-BL_k2_upset_hervs_upvars.pdf", height=5, width=7)
 upset(fromList(upvars.BL.k2.hervs), sets=c("C1", "C2"),  
       keep.order = T, order.by='degree', decreasing=F,
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
-dev.
+dev.off()
 
 up.binmat.BL.k2.hervs <- fromList(upvars.BL.k2.hervs)
 rn <- do.call(c, upvars.BL.k2.hervs)
@@ -350,40 +350,78 @@ pathways.hallmark <- gmtPathways("gsea/h.all.v2023.1.Hs.symbols.gmt")
 pathways.immune <- gmtPathways("gsea/c7.immunesigdb.v2023.1.Hs.symbols.gmt")
 pathways.bp <- gmtPathways("gsea/c5.go.bp.v2023.1.Hs.symbols.gmt")
 
+################################ FGSEA FUNCTION ################################
+
+make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
+  
+  fgsea.res$SYMBOL <- gene_table[rownames(fgsea.res),]$display
+  
+  fgsea.res <- as.data.frame(fgsea.res) %>% 
+    dplyr::select(SYMBOL, stat) %>% 
+    na.omit() %>% 
+    distinct() %>% 
+    group_by(SYMBOL) %>% 
+    summarize(stat=mean(stat))
+  
+  fgsea.ranks <- deframe(fgsea.res)
+  
+  fgsea.out <- fgsea(pathways=pathway, 
+                     stats=fgsea.ranks, 
+                     nPermSimple = 10000,
+                     eps=0)
+  return(fgsea.out)
+  
+  assign(paste0(clust_name, ".", pathway_name, ".fgsea.out"), fgsea.out, envir = .GlobalEnv )
+}
+
 ################################ HALLMARK FGSEA ################################
 
-k2.fgsea.res <- DESeq2::results(BL.k2.dds, contrast=c("clust.retro.k2", "C1", "C2"), 
-                                alpha=pval)
+fsgsea.hallmarks.k2 <- list(
+  "C1" = make.fsgsea(pathways.hallmark, BL.res.k2$C1, "C1", "hallmark"),
+  "C2" = make.fsgsea(pathways.hallmark, BL.res.k2$C2, "C2", "hallmark")
+)
 
-k2.fgsea.res$SYMBOL <- gene_table[rownames(k2.fgsea.res),]$display
+pdf("plots/05k-BL_k2_all_c_hallmarks.pdf", height=10, width=7)
+for(clust in names(fsgsea.hallmarks.k2)) {
+  fgseaResTidy <- fsgsea.hallmarks.k2[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fgseaResTidy) <- fgseaResTidy$pathway
+  
+  p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+}
+dev.off()
 
-k2.fgsea.res <- as.data.frame(k2.fgsea.res) %>% 
-  dplyr::select(SYMBOL, stat) %>% 
-  na.omit() %>% 
-  distinct() %>% 
-  group_by(SYMBOL) %>% 
-  summarize(stat=mean(stat))
+# Get longform df
+fsgsea.hallmarks.k2.summary <- rbindlist(fsgsea.hallmarks.k2, idcol = "index")
 
-k2.ranks <- deframe(k2.fgsea.res)
+# Recode df
+fsgsea.hallmarks.k2.summary$pathway <- gsub("HALLMARK_","",fsgsea.hallmarks.k2.summary$pathway)
+fsgsea.hallmarks.k2.summary$pathway <- gsub("_"," ",fsgsea.hallmarks.k2.summary$pathway)
 
-k2.fgsea <- fgsea(pathways=pathways.hallmark, stats=k2.ranks, eps=0)
 
-k2.fgseaResTidy <- k2.fgsea %>%
-  as_tibble() %>%
-  arrange(desc(NES))
+pdf("plots/05k-BL_k2_all_hallmarks_bubble.pdf", height=10, width=7.5)
+ggplot(fsgsea.hallmarks.k2.summary, aes(x = index, 
+                                        y = pathway, 
+                                        size = -log(padj), 
+                                        color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("BL HERV Cluster") +
+  ylab("Hallmark Pathway") 
+dev.off()
 
-# Show in a nice table:
-k2.fgseaResTidy %>% 
-  dplyr::select(-leadingEdge, -ES) %>% 
-  arrange(padj) %>% 
-  DT::datatable()
-
-ggplot(k2.fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.05)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
 
 ################################# IMMUNE FGSEA #################################
 
@@ -436,6 +474,65 @@ ggplot(k2.bp.fgseaResTidy, aes(reorder(pathway, NES), NES)) +
   labs(x="Pathway", y="Normalized Enrichment Score",
        title="Hallmark pathways NES from GSEA") + 
   theme_minimal()
+
+################################# B CELL FGSEA #################################
+
+load("r_outputs/05f-agirre_vars.Rdata")
+
+gene.sets.b.cell <- lapply(upvars_agirre[1:6], function(r) gene_table[r[1:150],]$display)
+herv.sets.b.cell <- lapply(upvars_agirre_hervs[1:6], function(r) r[1:25])
+
+gene.herv.sets.b.cell <- list("DZ" = append(gene.sets.b.cell$DZ, herv.sets.b.cell$DZ),
+                              "LZ" = append(gene.sets.b.cell$LZ, herv.sets.b.cell$LZ),
+                              "PB" = append(gene.sets.b.cell$PB, herv.sets.b.cell$PB),
+                              "BMPC" = append(gene.sets.b.cell$BMPC, herv.sets.b.cell$BMPC),
+                              "NB" = append(gene.sets.b.cell$NB, herv.sets.b.cell$NB),
+                              "MB" = append(gene.sets.b.cell$MB, herv.sets.b.cell$MB)
+)
+
+b.cell.k2 <- list(
+  "C1" = make.fsgsea(gene.herv.sets.b.cell, BL.res.k2$C1, "C1", "b.cell"),
+  "C2" = make.fsgsea(gene.herv.sets.b.cell, BL.res.k2$C2, "C2", "b.cell")
+)
+
+pdf("plots/05q-DLBCL_k7_all_c_bcell.pdf", height=10, width=7)
+for(clust in names(b.cell.k2)) {
+  fgseaResTidy <- b.cell.k2[[clust]] %>%
+    as_tibble() %>%
+    arrange(desc(NES))
+  
+  rownames(fgseaResTidy) <- fgseaResTidy$pathway
+  
+  p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+    geom_col(aes(fill=padj<0.05)) +
+    coord_flip() +
+    labs(x="Pathway", y="Normalized Enrichment Score",
+         title=clust) + 
+    theme_minimal()
+  
+  print(p)
+}
+dev.off()
+
+# Get longform df
+b.cell.k2.summary <- rbindlist(b.cell.k2, idcol = "index")
+
+
+pdf("plots/05k-BL_k2_bcell_bubble.pdf", height=4, width=4)
+ggplot(b.cell.k2.summary, aes(x = index, 
+                                     y = pathway, 
+                                     size = -log(padj), 
+                                     color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("BL HERV Cluster") +
+  ylab("B Cell Signature") 
+dev.off()
+
+
 
 ################################################################################
 ################################################################################

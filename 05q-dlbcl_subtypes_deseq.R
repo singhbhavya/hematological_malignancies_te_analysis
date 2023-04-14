@@ -522,10 +522,6 @@ make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
                      nPermSimple = 10000,
                      eps=0)
   
-  k4.fgseaResTidy <- k4.fgsea %>%
-    as_tibble() %>%
-    arrange(desc(NES))
-  
   return(fgsea.out)
   
   assign(paste0(clust_name, ".", pathway_name, ".fgsea.out"), fgsea.out, envir = .GlobalEnv )
