@@ -172,22 +172,22 @@ p3 <- plot.counts(dds_lrt, "MER4B_10q21.3")
 p4 <- plot.counts(dds_lrt, "ERVL_Xq21.1b")
 p5 <- plot.counts(dds_lrt, "ERVLE_14q23.2")
 
-pdf("plots/05m-all_lymphoma_selected_features.pdf", height=8, width=15)
+pdf("plots/05m-all_lymphoma_selected_features.pdf", height=4, width=18)
 plot_grid(p1, p2, p3, p4, p5,
           nrow = 2, 
           ncol = 3,
           labels = "AUTO")
 dev.off()
 
-pdf("plots/05m-all_lymphoma_HARLEQUIN_1q32.1.pdf", height=4, width=5)
+pdf("plots/05m-all_lymphoma_HARLEQUIN_1q32.1.pdf", height=4, width=6)
 plot.counts(dds_lrt, "HARLEQUIN_1q32.1") # Weird one
 dev.off()
 
-pdf("plots/05m-all_lymphoma_LTR46_Xq11.1.pdf", height=4, width=5)
+pdf("plots/05m-all_lymphoma_LTR46_Xq11.1.pdf", height=4, width=6)
 plot.counts(dds_lrt, "LTR46_Xq11.1") # Upregulated in FL
 dev.off()
 
-pdf("plots/05m-all_lymphoma_upreg_DZ.pdf", height=4, width=15)
+pdf("plots/05m-all_lymphoma_upreg_DZ.pdf", height=4, width=18)
 plot_grid(plot.counts(dds_lrt, "HERVH_3q22.1e"), # Upregulated in DZ GCB, 
           plot.counts(dds_lrt, "HML5_1q22"), # Upregulated in DZ GCB 
           plot.counts(dds_lrt, "HERVFH21_1p36.31"),  # Upregulated in DZ Agirre
@@ -195,7 +195,7 @@ plot_grid(plot.counts(dds_lrt, "HERVH_3q22.1e"), # Upregulated in DZ GCB,
           ncol = 3)
 dev.off()
 
-pdf("plots/05m-all_lymphoma_upreg_PB.pdf", height=8, width=10)
+pdf("plots/05m-all_lymphoma_upreg_PB.pdf", height=8, width=12)
 plot_grid(plot.counts(dds_lrt, "HERVH_15q26.3b"), # Upregulated in BMPC Agirre
           plot.counts(dds_lrt, "MER61_3q24a"), # Upregulated in PB Agirre
           plot.counts(dds_lrt, "PABLB_2q31.1"), # Upregulated in PB Agirre
@@ -204,7 +204,7 @@ plot_grid(plot.counts(dds_lrt, "HERVH_15q26.3b"), # Upregulated in BMPC Agirre
           ncol = 2)
 dev.off()
 
-pdf("plots/05m-all_lymphoma_BL_lasso_features.pdf", height=8, width=15)
+pdf("plots/05m-all_lymphoma_BL_lasso_features.pdf", height=8, width=18)
 plot_grid(plot.counts(dds_lrt, "ERVLE_2p25.3c"),
           plot.counts(dds_lrt, "MER61_4p16.3"), 
           plot.counts(dds_lrt, "ERV316A3_2q21.2b"),

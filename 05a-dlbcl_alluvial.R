@@ -175,4 +175,107 @@ ggplot(as.data.frame(alluvial),
 
 ggsave("plots/05a-dlbcl_alluvial_k7_lymphgen_only.pdf", height=3, width=10)
 
+ggplot(as.data.frame(alluvial),
+       aes(y = n, 
+           axis1 = EcoTyper_call, 
+           axis2 = clust.retro.k7))  +
+  guides(fill = FALSE) +
+  geom_alluvium(aes(fill = EcoTyper_call),
+                width = 0, knot.pos = 0, reverse = FALSE) +
+  geom_stratum(width = 1/4, 
+               reverse = FALSE, 
+               fill = "lightgrey", 
+               alpha = .7) +
+  geom_text(stat = "stratum", 
+            aes(label = after_stat(stratum)),
+            reverse = FALSE) + coord_flip() + 
+  scale_fill_manual(values = c("S1" = "#bcc779",
+                               "S2" = "#60aaec",
+                               "S3" = "#Ecaf60",
+                               "S4" = "#B789EE",
+                               "S5" = "#E0AF71",
+                               "Unassigned" = "grey")) +
+  scale_x_continuous(breaks = 1:2, labels = 
+                       c("EcoTyper)", 
+                         "clust.retro.k7")) +
+  theme_half_open() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y=element_text(size=16))
 
+ggsave("plots/05a-dlbcl_alluvial_k7_ecotyper_only.pdf", height=3, width=10)
+
+################################## BAR PLOTS ###################################
+
+
+ggplot(DLBCL_metadata %>% 
+         dplyr::count(clust.retro.k7,
+                      COO_class, sort = TRUE), 
+       aes(fill=COO_class, y=n, x=clust.retro.k7)) + 
+  geom_bar(position="stack", stat="identity", alpha=0.7) +
+  theme_pubr() +
+  theme(aspect.ratio = 1,
+        axis.line=element_blank()) + 
+  scale_fill_manual(values = c("ABC" = "red3", 
+                               "GCB" = "royalblue", 
+                               "Unclass" = "lightblue")) +
+  xlab("DLBCL cluster") +
+  ylab("Number of samples") + 
+  guides(fill=guide_legend(title="COO class"))
+
+ggsave("plots/05a-dlbcl_barplot_k7_coo_only.pdf", height=3.5, width=3.5)
+
+ggplot(DLBCL_metadata %>% 
+         dplyr::count(clust.retro.k7,
+                      LymphGen_call, sort = TRUE), 
+       aes(fill=LymphGen_call, y=n, x=clust.retro.k7)) + 
+  geom_bar(position="stack", stat="identity", alpha=0.7) +
+  theme_pubr() +
+  theme(aspect.ratio = 1,
+        axis.line=element_blank()) + 
+  scale_fill_manual(values = c("A53" = "#e78bf0",
+                               "BN2" = "#e28743",
+                               "BN2/A53" = "#AF6C3A",
+                               "BN2/EZB" = "#c79875",
+                               "BN2/MCD" = "#7a4c29",
+                               "BN2/ST2" = "#58361d",
+                               "EZB" = "#3d3aaf",
+                               "EZB/A53" = "#7775c7",
+                               "EZB/MCD" = "#8b89cf",
+                               "EZB/N1/ST2/A53" = "#b1b0df",
+                               "EZB/ST2/A53" = "#d8d8ef",
+                               "MCD" = "#4d8347",
+                               "MCD/A53" = "#82a87e",
+                               "MCD/ST2" = "#b8cdb5",
+                               "N1" = "#e84646",
+                               "N1/ST2" = "#f19090",
+                               "Other" = "#e9f190",
+                               "ST2" = "#38baaa",
+                               "NA" = "grey")) +
+  xlab("DLBCL cluster") +
+  ylab("Number of samples") + 
+  guides(fill=guide_legend(title="LymphGen class")) 
+
+ggsave("plots/05a-dlbcl_barplot_k7_lymphgen_only.pdf", height=5, width=5)
+
+ggplot(DLBCL_metadata %>% 
+         dplyr::count(clust.retro.k7,
+                      EcoTyper_call, sort = TRUE), 
+       aes(fill=EcoTyper_call, y=n, x=clust.retro.k7)) + 
+  geom_bar(position="stack", stat="identity", alpha=0.7) +
+  theme_pubr() +
+  theme(aspect.ratio = 1,
+        axis.line=element_blank()) + 
+  scale_fill_manual(values = c("S1" = "#bcc779",
+                               "S2" = "#60aaec",
+                               "S3" = "#Ecaf60",
+                               "S4" = "#B789EE",
+                               "S5" = "lightpink",
+                               "Unassigned" = "grey",
+                               "Missing" = "grey")) +
+  xlab("DLBCL cluster") +
+  ylab("Number of samples") + 
+  guides(fill=guide_legend(title="EcoTyper class"))
+
+ggsave("plots/05a-dlbcl_barplot_k7_ecotyper_only.pdf", height=5.5, width=5.5)

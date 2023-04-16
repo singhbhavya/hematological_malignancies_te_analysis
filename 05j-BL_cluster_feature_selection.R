@@ -165,10 +165,10 @@ plot.counts <- function(df, gene) {
     ylab("Counts") +
     scale_fill_manual(values = c("C1" = wes_palette("Chevalier1")[1], 
                                  "C2" = wes_palette("Chevalier1")[2])) + 
-    scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
     ggtitle(gene) + 
     theme(plot.title = element_text(hjust = 0.5),
-          aspect.ratio = 1)
+          aspect.ratio = 1)  + 
+    scale_y_log10(labels = label_comma()) 
 }
 
 
@@ -200,4 +200,5 @@ reads.left %>%
 #<fct>     <dbl>
 # C1    46688579.
 # C2    43442928
+
 
