@@ -262,6 +262,23 @@ rn <- rn[!duplicated(rn)]
 rownames(dn.binmat.DLBCL.k7) <- rn
 rm(rn)
 
+upvars.DLBCL.k7.sub <-
+  lapply(sig.k7[1:7], function(r) rownames(subset(r, log2FoldChange>0))[1:100])
+up.binmat.DLBCL.k7.sub <- fromList(upvars.DLBCL.k7.sub)
+rn <- do.call(c, upvars.DLBCL.k7.sub)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat.DLBCL.k7.sub) <- rn
+rm(rn)
+
+
+upvars.DLBCL.k7.sub2 <-
+  lapply(sig.k7[1:7], function(r) rownames(subset(r, log2FoldChange>0))[1:10])
+up.binmat.DLBCL.k7.sub2 <- fromList(upvars.DLBCL.k7.sub2)
+rn <- do.call(c, upvars.DLBCL.k7.sub2)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat.DLBCL.k7.sub2) <- rn
+rm(rn)
+
 ############################## UPSET HERVS ONLY ################################
 
 upvars.DLBCL.k7.herv <- lapply(sig.k7.herv[1:7], function(r) rownames(subset(r, log2FoldChange>0)))
@@ -353,6 +370,15 @@ rn <- rn[!duplicated(rn)]
 rownames(dn.binmat.DLBCL.k7.hervs) <- rn
 rm(rn)
 
+upvars.DLBCL.k7.herv.sub <-
+  lapply(sig.k7.herv[1:7], function(r) rownames(subset(r, log2FoldChange>0))[1:8])
+up.binmat.DLBCL.k7.hervs.sub <- fromList(upvars.DLBCL.k7.herv.sub)
+rn <- do.call(c, upvars.DLBCL.k7.herv.sub)
+rn <- rn[!duplicated(rn)]
+rownames(up.binmat.DLBCL.k7.hervs.sub) <- rn
+rm(rn)
+
+
 ################################# HEATMAPS #####################################
 ################################### SETUP ######################################
 
@@ -405,9 +431,13 @@ annoCol <- list(COO_class = c("GCB" = "royalblue",
 
 ######################### UPREGULATED IN ALL GROUPS ############################
 top.genes <- rownames(up.binmat.DLBCL.k7)
+top.genes.sub <- rownames(up.binmat.DLBCL.k7.sub)
+top.genes.sub.sub <- rownames(up.binmat.DLBCL.k7.sub2)
+top.hervs <- rownames(up.binmat.DLBCL.k7.hervs)
+top.hervs.sub <- rownames(up.binmat.DLBCL.k7.hervs.sub)
 
 pdf("plots/05q-DLBCL_k7_geneshervs_upregulated_all.pdf", height=10, width=10)
-pheatmap(assay(DLBCL.k7.dds)[top.genes,], 
+pheatmap(assay(DLBCL.k7.dds)[,c(ccp.obj[[8]]$consensusTree$order)][top.genes,], 
          main="Upregulated Genes and HERVs, all clusters",
          cluster_rows=TRUE,
          show_rownames=FALSE,
@@ -416,16 +446,46 @@ pheatmap(assay(DLBCL.k7.dds)[top.genes,],
          scale="row",
          breaks=seq(-3,3,length.out=14),
          labels_row = gene_table[top.genes,]$display,
-         cluster_cols=TRUE, 
+         cluster_cols=FALSE, 
          treeheight_row=0,
          annotation_col=df,
          annotation_colors = annoCol)
 dev.off()
 
-top.hervs <- rownames(up.binmat.DLBCL.k7.hervs)
+pdf("plots/05q-DLBCL_k7_geneshervs_upregulated_sub.pdf", height=10, width=10)
+pheatmap(assay(DLBCL.k7.dds)[,c(ccp.obj[[8]]$consensusTree$order)][top.genes.sub,], 
+         main="Upregulated Genes and HERVs, all clusters",
+         cluster_rows=TRUE,
+         show_rownames=FALSE,
+         show_colnames = FALSE,
+         color = cols,
+         scale="row",
+         breaks=seq(-3,3,length.out=14),
+         labels_row = gene_table[top.genes,]$display,
+         cluster_cols=FALSE, 
+         treeheight_row=0,
+         annotation_col=df,
+         annotation_colors = annoCol)
+dev.off()
+
+pdf("plots/05q-DLBCL_k7_geneshervs_upregulated_subsub.pdf", height=10, width=10)
+pheatmap(assay(DLBCL.k7.dds)[,c(ccp.obj[[8]]$consensusTree$order)][top.genes.sub.sub,], 
+         main="Upregulated Genes and HERVs, all clusters",
+         cluster_rows=TRUE,
+         show_rownames=TRUE,
+         show_colnames = FALSE,
+         color = cols,
+         scale="row",
+         breaks=seq(-3,3,length.out=14),
+         labels_row = gene_table[top.genes,]$display,
+         cluster_cols=FALSE, 
+         treeheight_row=0,
+         annotation_col=df,
+         annotation_colors = annoCol)
+dev.off()
 
 pdf("plots/05q-DLBCL_k7_hervs_upregulated_all.pdf", height=10, width=10)
-pheatmap(assay(DLBCL.k7.herv.dds)[top.hervs,], 
+pheatmap(assay(DLBCL.k7.dds)[,c(ccp.obj[[8]]$consensusTree$order)][top.hervs,], 
          main="Upregulated HERVs, all clusters",
          cluster_rows=TRUE,
          show_rownames=FALSE,
@@ -434,7 +494,23 @@ pheatmap(assay(DLBCL.k7.herv.dds)[top.hervs,],
          scale="row",
          breaks=seq(-3,3,length.out=14),
          labels_row = gene_table[top.hervs,]$display,
-         cluster_cols=TRUE, 
+         cluster_cols=FALSE, 
+         treeheight_row=0,
+         annotation_col=df,
+         annotation_colors = annoCol)
+dev.off()
+
+pdf("plots/05q-DLBCL_k7_hervs_upregulated_sub.pdf", height=10, width=10)
+pheatmap(assay(DLBCL.k7.dds)[,c(ccp.obj[[8]]$consensusTree$order)][top.hervs.sub,], 
+         main="Upregulated HERVs, all clusters",
+         cluster_rows=TRUE,
+         show_rownames=TRUE,
+         show_colnames = FALSE,
+         color = cols,
+         scale="row",
+         breaks=seq(-3,3,length.out=14),
+         labels_row = gene_table[top.hervs,]$display,
+         cluster_cols=FALSE, 
          treeheight_row=0,
          annotation_col=df,
          annotation_colors = annoCol)
