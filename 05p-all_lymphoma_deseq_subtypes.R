@@ -179,15 +179,99 @@ downvars <- lapply(sig_herv[1:8], function(r) rownames(subset(r, log2FoldChange<
 allvars <- lapply(sig_herv[1:8], function(r) rownames(subset(r, log2FoldChange>0 | log2FoldChange<0)))
 
 pdf("plots/05p-all_lymph_subtype_upset_upvars.pdf", height=7, width=11)
-upset(fromList(upvars), sets=c(names(sig_herv)),  
+UpSetR::upset(fromList(upvars), sets=c(names(sig_herv)),  
       keep.order = T, order.by='degree', decreasing=F,
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
+pdf("plots/05p-all_lymph_subtype_compexupset_upvars.pdf", height=4, width=6)
+ComplexUpset::upset(fromList(upvars), 
+                    intersect = c(names(upvars)),
+                    intersections = list( 
+                      c("DLBCL ABC"), 
+                      c("BL Endemic EBV Negative"), 
+                      c("BL Endemic EBV Positive"),
+                      c("FL"), 
+                      c("DLBCL GCB"),
+                      c("BL Sporadic EBV Negative"),
+                      c("BL Sporadic EBV Positive"),
+                      c("DLBCL Unclass")), 
+                    queries = list(
+                      upset_query(set=c("DLBCL ABC"), 
+                                  color = "red3", 
+                                  fill = "red3"),
+                      upset_query(set=c("BL Endemic EBV Negative"), 
+                                  color = "#ae5c00", 
+                                  fill = "#ae5c00"),
+                      upset_query(set=c("BL Endemic EBV Positive"), 
+                                  color = wes_palette("Darjeeling1")[2], 
+                                  fill = wes_palette("Darjeeling1")[2]),
+                      upset_query(set=c("FL"), 
+                                  color = "#868686B2", 
+                                  fill = "#868686B2"),
+                      upset_query(set=c("DLBCL GCB"), 
+                                  color = "royalblue", 
+                                  fill = "royalblue"),
+                      upset_query(set=c("BL Sporadic EBV Negative"), 
+                                  color = wes_palette("Darjeeling1")[4], 
+                                  fill = wes_palette("Darjeeling1")[4]),
+                      upset_query(set=c("BL Sporadic EBV Positive"), 
+                                  color = "#006053", 
+                                  fill = "#006053"),
+                      upset_query(set=c("DLBCL Unclass"), 
+                                  color = "lightblue", 
+                                  fill = "lightblue")
+                    ),
+                    set_sizes=(upset_set_size())
+                      + theme(axis.text.x=element_text(angle=45)))
+
+dev.off()
+
 pdf("plots/05p-all_lymph_subtype_upset_dnwars.pdf", height=7, width=11)
-upset(fromList(downvars), sets=c(names(sig_herv)),  
+UpSetR::upset(fromList(downvars), sets=c(names(sig_herv)),  
       keep.order = T, order.by='degree', decreasing=F,
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
+dev.off()
+
+pdf("plots/05p-all_lymph_subtype_complexupset_dnwars.pdf", height=7, width=11)
+ComplexUpset::upset(fromList(downvars), 
+                    intersect = c(names(downvars)),
+                    intersections = list( 
+                      c("DLBCL ABC"), 
+                      c("BL Endemic EBV Negative"), 
+                      c("BL Endemic EBV Positive"),
+                      c("FL"), 
+                      c("DLBCL GCB"),
+                      c("BL Sporadic EBV Negative"),
+                      c("BL Sporadic EBV Positive"),
+                      c("DLBCL Unclass")), 
+                    queries = list(
+                      upset_query(set=c("DLBCL ABC"), 
+                                  color = "red3", 
+                                  fill = "red3"),
+                      upset_query(set=c("BL Endemic EBV Negative"), 
+                                  color = "#ae5c00", 
+                                  fill = "#ae5c00"),
+                      upset_query(set=c("BL Endemic EBV Positive"), 
+                                  color = wes_palette("Darjeeling1")[2], 
+                                  fill = wes_palette("Darjeeling1")[2]),
+                      upset_query(set=c("FL"), 
+                                  color = "#868686B2", 
+                                  fill = "#868686B2"),
+                      upset_query(set=c("DLBCL GCB"), 
+                                  color = "royalblue", 
+                                  fill = "royalblue"),
+                      upset_query(set=c("BL Sporadic EBV Negative"), 
+                                  color = wes_palette("Darjeeling1")[4], 
+                                  fill = wes_palette("Darjeeling1")[4]),
+                      upset_query(set=c("BL Sporadic EBV Positive"), 
+                                  color = "#006053", 
+                                  fill = "#006053"),
+                      upset_query(set=c("DLBCL Unclass"), 
+                                  color = "lightblue", 
+                                  fill = "lightblue")
+                    ))
+
 dev.off()
 
 up.binmat <- fromList(upvars)
@@ -394,4 +478,99 @@ ggplot(b.cell.all.lymph.summary, aes(x = index,
   ylab("B Cell Signature") +
   theme(plot.margin = unit(c(1.5,1.5,1.5,1.5), "cm"))
 dev.off()
+
+
+################################ FAMILY LEVEL UP ############################### 
+
+upreg.hervs.df <- do.call(rbind, lapply(upvars, data.frame))
+colnames(upreg.hervs.df) <- c("herv")
+upreg.hervs.df$cancer_type <- rownames(upreg.hervs.df)
+upreg.hervs.df$cancer_type <- gsub("\\..*","",upreg.hervs.df$cancer_type)
+upreg.hervs.df$family <- retro.annot$family[match(upreg.hervs.df$herv, 
+                                                         retro.annot$locus)]
+
+upreg.families <-
+  upreg.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+down.hervs.df <- do.call(rbind, lapply(downvars, data.frame))
+colnames(down.hervs.df) <- c("herv")
+down.hervs.df$cancer_type <- rownames(down.hervs.df)
+down.hervs.df$cancer_type <- gsub("\\..*","",down.hervs.df$cancer_type)
+down.hervs.df$family <- retro.annot$family[match(down.hervs.df$herv, 
+                                                        retro.annot$locus)]
+
+downreg.families <-
+  down.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+updown.family <- do.call(rbind, (list(Upregulated = upreg.families, 
+                                      Dowregulated = downreg.families)))
+updown.family$expression <- rownames(updown.family)
+updown.family$expression <- gsub("\\..*","",updown.family$expression)
+rownames(updown.family)<-NULL
+
+pdf("plots/05p-lymphoma_updown_families_all.pdf", height=8, width=8)
+ggplot(updown.family, aes(fill=reorder(family, -n), y=cancer_type, x=n)) + 
+  geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  coord_flip() +
+  theme_cowplot() +  
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab(NULL) +
+  xlab("Number of HERV Loci") + 
+  theme(legend.position = c("right"),
+        plot.margin = margin(10, 10, 10, 40),
+        axis.line=element_blank()) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
+
+
+################################# PLOT COUNTS ################################## 
+
+
+plot.counts <- function(df, gene, title) {
+  
+  as.data.frame(plotCounts(df, 
+                           gene=gene, 
+                           intgroup="subtype", 
+                           returnData = TRUE)) %>%
+    ggplot(aes(x=subtype, y=count, fill=subtype))  +
+    geom_boxplot(notch = TRUE) +
+    theme_pubr() +
+    theme(legend.position="none",
+          axis.text.x = element_text(angle=45, hjust=1)) +
+    xlab("subtype") +
+    ylab("Counts") +
+    ggtitle(title) + 
+    theme(plot.title = element_text(hjust = 0.5),
+          aspect.ratio = 1) +
+    scale_fill_manual(values = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
+                                 "Sporadic BL EBV-positive" = "#006053",
+                                 "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
+                                 "Endemic BL EBV-negative" = "#ae5c00",
+                                 "GCB" = "royalblue", 
+                                 "ABC" = "red3", 
+                                 "Unclass" = "lightblue", 
+                                 "Missing" = "grey",
+                                 "FOLLICULAR GRADE 1" = "#F1BB7B",
+                                 "FOLLICULAR GRADE 2" = "#FD6467",
+                                 "FOLLICULAR GRADE 3A" = "#5B1A18")) + 
+    scale_y_log10(labels = label_comma()) 
+}
+
+plot.counts(all.g.dds, "ENSG00000143379.12", "SETDB1") +
+  stat_compare_means(comparisons = list(c("ABC", "Endemic BL EBV-positive")))
+#SETDB1
+plot.counts(all.g.dds, "ENSG00000182578.14", "CSF1R") +
+  stat_compare_means(comparisons = c("ABC", "Endemic BL EBV-positive"))#CSF1R
+
 

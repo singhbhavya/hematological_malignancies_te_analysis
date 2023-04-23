@@ -912,3 +912,50 @@ ggplot(fsgsea.b.cell.k7.summary, aes(x = index,
   ylab("B Cell Signature") 
 dev.off()
 
+################################# PLOT COUNTS ################################## 
+
+
+plot.counts <- function(df, gene, title) {
+  
+  as.data.frame(plotCounts(df, 
+                           gene=gene, 
+                           intgroup="clust.retro.k7", 
+                           returnData = TRUE)) %>%
+    ggplot(aes(x=clust.retro.k7, y=count, fill=clust.retro.k7))  +
+    geom_boxplot(notch = TRUE) +
+    theme_pubr() +
+    theme(legend.position="none",
+          axis.text.x = element_text(angle=45, hjust=1)) +
+    xlab("HERV Cluster") +
+    ylab("Counts") +
+    ggtitle(title) + 
+    theme(plot.title = element_text(hjust = 0.5),
+          aspect.ratio = 1) +
+    scale_fill_manual(values = c("C1" = "#E64B35FF",
+                                 "C2" = "#4DBBD5FF",
+                                 "C3" = "#00A087FF",
+                                 "C4" = "#3C5488FF",
+                                 "C5" = "#F39B7FFF",
+                                 "C6" = "#8491B4FF",
+                                 "C7" = "#91D1C2FF")) + 
+    scale_y_log10(labels = label_comma()) 
+}
+
+plot.counts(DLBCL.k7.dds, "ENSG00000143379.12", "SETDB1") +
+  stat_compare_means(comparisons = list(c("C1", "C5")))#CSF1R
+
+
+plot.counts(DLBCL.k7.dds, "ENSG00000182578.14", "CSF1R") +
+  stat_compare_means(comparisons = list(c("C1", "C5")))#CSF1R
+
+plot.counts(DLBCL.k7.dds, "HARLEQUIN_1q32.1", "HARLEQUIN_1q32.1") 
+plot.counts(DLBCL.k7.dds, "HML2_1q22", "HML2_1q22")
+plot.counts(DLBCL.k7.dds, "HML5_1q22", "HML5_1q22")
+
+# C2
+plot.counts(DLBCL.k7.dds, "HARLEQUIN_4p15.2", "HARLEQUIN_4p15.2")
+plot.counts(DLBCL.k7.dds, "ENSG00000204531.20", "POU5F1")
+plot.counts(DLBCL.k7.dds, "ENSG00000101336.18", "HCK")
+plot.counts(DLBCL.k7.dds, "ENSG00000148843.15", "CD11C")
+
+

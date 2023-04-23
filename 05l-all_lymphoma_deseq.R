@@ -149,10 +149,53 @@ upset(fromList(upvars_hervs), sets=c("DLBCL", "BL", "FL"),
       text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.7))
 dev.off()
 
+pdf("plots/05l-all_lymph_complexupset_upvars_hervs.pdf", height=4, width=5)
+
+ComplexUpset::upset(fromList(upvars_hervs[1:3]), 
+                    intersect = c(names(upvars_hervs[1:3])),
+                    intersections = list( 
+                      c("BL"), 
+                      c("DLBCL"), 
+                      c("FL")), 
+                    queries = list(
+                      upset_query(set=c("DLBCL"), 
+                                  color = "#0073C2B2", 
+                                  fill = "#0073C2B2"),
+                      upset_query(set=c("BL"), 
+                                  color = "#EFC000B2", 
+                                  fill = "#EFC000B2"),
+                      upset_query(set=c("FL"), 
+                                  color = "#868686B2", 
+                                  fill = "#868686B2")
+                    ))
+
+dev.off()
+
 pdf("plots/05l-all_lymph_upset_dnvars_hervs.pdf", height=5, width=7)
 upset(fromList(downvars_hervs), sets=c("DLBCL", "BL", "FL"),  
       keep.order = T, order.by='degree', decreasing=F,
       text.scale = c(1.5, 2, 1.5, 1.5, 1.5, 1.7))
+dev.off()
+
+pdf("plots/05l-all_lymph_complexupset_dnvars_hervs.pdf", height4, width=5)
+ComplexUpset::upset(fromList(downvars_hervs[1:3]), 
+                    intersect = c(names(downvars_hervs[1:3])),
+                    intersections = list( 
+                      c("BL"), 
+                      c("DLBCL"), 
+                      c("FL")), 
+                    queries = list(
+                      upset_query(set=c("DLBCL"), 
+                                  color = "#0073C2B2", 
+                                  fill = "#0073C2B2"),
+                      upset_query(set=c("BL"), 
+                                  color = "#EFC000B2", 
+                                  fill = "#EFC000B2"),
+                      upset_query(set=c("FL"), 
+                                  color = "#868686B2", 
+                                  fill = "#868686B2")
+                    ))
+
 dev.off()
 
 up.binmat.hervs <- fromList(upvars_hervs)
@@ -271,47 +314,136 @@ for(clust in c("BL", "DLBCL", "FL")) {
 
 ######################### VOLCANO BETWEEN LYMPHOMAS ############################
 
-pdf("plots/05l-all_lymphoma_volcano_DLBCL_v_all.pdf", height=8, width=8)
+pdf("plots/05l-all_lymphoma_volcano_DLBCL_v_all.pdf", height=5, width=5)
 EnhancedVolcano(sig_herv$DLBCL,
                 lab = rownames(sig_herv$DLBCL),
+                selectLab = sig_herv$DLBCL$display[1:100],
                 x = 'log2FoldChange',
                 y = 'pvalue',
-                title = 'All vs DLBCL')
+                ylim = c(0,350),
+                title = 'All vs DLBCL',
+                labSize = 4) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
 dev.off()
 
-pdf("plots/05l-all_lymphoma_BL_v_all.pdf", height=8, width=8)
+pdf("plots/05l-all_lymphoma_BL_v_all.pdf", height=5, width=5)
 EnhancedVolcano(sig_herv$BL,
                 lab = rownames(sig_herv$BL),
+                selectLab = sig_herv$BL$display[1:100],
                 x = 'log2FoldChange',
                 y = 'pvalue',
-                title = 'All vs BL')
+                ylim = c(0,350),
+                title = 'All vs BL',
+                labSize = 4) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
 dev.off()
 
 
-pdf("plots/05l-all_lymphoma_volcano_DLBCL_v_BL.pdf", height=8, width=8)
+pdf("plots/05l-all_lymphoma_volcano_DLBCL_v_BL.pdf", height=5, width=5)
 EnhancedVolcano(sig_herv$BLvDLBCL,
                 lab = rownames(sig_herv$BLvDLBCL),
+                selectLab = sig_herv$BLvDLBCL$display[1:700],
                 x = 'log2FoldChange',
                 y = 'pvalue',
-                title = 'DLBCL vs BL')
+                ylim = c(0,350),
+                title = 'DLBCL vs BL',
+                labSize = 4) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
 dev.off()
 
 
-pdf("plots/05l-all_lymphoma_volcano_FL_v_BL.pdf", height=8, width=8)
+pdf("plots/05l-all_lymphoma_volcano_FL_v_BL.pdf", height=5, width=5)
 EnhancedVolcano(sig_herv$BLvFL,
                 lab = rownames(sig_herv$BLvFL),
+                selectLab = sig_herv$BLvFL$display[1:50],
                 x = 'log2FoldChange',
                 y = 'pvalue',
-                title = 'FL vs BL')
+                ylim = c(0,100),
+                title = 'FL vs BL',
+                labSize = 4) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
 dev.off()
 
-pdf("plots/05l-all_lymphoma_volcano_FL_v_DLBCL.pdf", height=8, width=8)
+pdf("plots/05l-all_lymphoma_volcano_FL_v_DLBCL.pdf", height=5, width=5)
 EnhancedVolcano(sig_herv$DLBCLvFL,
                 lab = rownames(sig_herv$DLBCLvFL),
+                selectLab = sig_herv$DLBCLvFL$display[1:10],
                 x = 'log2FoldChange',
                 y = 'pvalue',
-                title = 'FL vs DLBCL')
+                ylim = c(0,100),
+                title = 'FL vs DLBCL',
+                labSize = 4) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
 dev.off()
+
+################################ FAMILY LEVEL UP ############################### 
+
+upreg.hervs.df <- do.call(rbind, lapply(upvars_hervs[1:3], data.frame))
+colnames(upreg.hervs.df) <- c("herv")
+upreg.hervs.df$cancer_type <- rownames(upreg.hervs.df)
+upreg.hervs.df$cancer_type <- gsub("\\..*","",upreg.hervs.df$cancer_type)
+upreg.hervs.df$family <- retro.annot$family[match(upreg.hervs.df$herv, 
+                                                  retro.annot$locus)]
+
+upreg.families <-
+  upreg.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+down.hervs.df <- do.call(rbind, lapply(downvars_hervs[1:3], data.frame))
+colnames(down.hervs.df) <- c("herv")
+down.hervs.df$cancer_type <- rownames(down.hervs.df)
+down.hervs.df$cancer_type <- gsub("\\..*","",down.hervs.df$cancer_type)
+down.hervs.df$family <- retro.annot$family[match(down.hervs.df$herv, 
+                                                 retro.annot$locus)]
+
+downreg.families <-
+  down.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+updown.family <- do.call(rbind, (list(Upregulated = upreg.families, 
+                                      Dowregulated = downreg.families)))
+updown.family$expression <- rownames(updown.family)
+updown.family$expression <- gsub("\\..*","",updown.family$expression)
+rownames(updown.family)<-NULL
+
+pdf("plots/05l-lymphoma_updown_families_all.pdf", height=8, width=8)
+ggplot(updown.family, aes(fill=reorder(family, -n), y=cancer_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  coord_flip() +
+  theme_cowplot() +  
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab(NULL) +
+  xlab("Number of HERV Loci") + 
+  theme(legend.position = c("right"),
+        plot.margin = margin(10, 10, 10, 40),
+        axis.line=element_blank()) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
+
 
 ################################### SAVE DATA ##################################
 
@@ -324,6 +456,8 @@ sig_all_l <- sig
 
 save(upvars_all_l, upvars_all_l_hervs, downvars_all_l, downvars_all_l_hervs,
      sig_herv_all_l, sig_all_l, file = "r_outputs/05l-all_lymphoma_vars.Rdata")   
+
+load("r_outputs/05l-all_lymphoma_vars.Rdata")
 
 ################################# CLUSTER SIZES ################################
 

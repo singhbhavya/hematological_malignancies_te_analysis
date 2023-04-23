@@ -112,11 +112,12 @@ length(res.stabsel.c$stable)
 
 selected_vars$lasso <- names(res.stabsel.c$stable)
 
-pdf("plots/05m-all_lymphoma_features_upset.pdf", height=6, width=8)
-upset(fromList(selected_vars), 
-      sets=c('lrt', 'boruta', 'lasso'), 
-      order.by = "freq",
-      text.scale = c(1.5, 1.5, 1.3, 1.3, 1.3, 1.3))
+pdf("plots/05m-all_lymphoma_features_upset.pdf", height=5, width=7.5)
+UpSetR::upset(
+  fromList(selected_vars), 
+  sets=c('lrt', 'boruta', 'lasso'), 
+  order.by = "freq",
+  text.scale = c(2, 2, 2, 2, 2, 2))
 dev.off()
 
 ################################# FEATURE GRAPH ################################
@@ -166,7 +167,7 @@ plot.counts <- function(df, gene) {
 }
 
 
-p1 <- plot.counts(dds_lrt, "ERVL_1p34.2")
+p1 <- plot.counts(dds_lrt, "ERVL_1p34.2") + stat_compare_means(comparisons = list(c("ABC", "Endemic BL EBV-positive")))
 p2 <- plot.counts(dds_lrt, "ERVLB4_2p16.3")
 p3 <- plot.counts(dds_lrt, "MER4B_10q21.3")
 p4 <- plot.counts(dds_lrt, "ERVL_Xq21.1b")
@@ -179,8 +180,17 @@ plot_grid(p1, p2, p3, p4, p5,
           labels = "AUTO")
 dev.off()
 
-pdf("plots/05m-all_lymphoma_HARLEQUIN_1q32.1.pdf", height=4, width=6)
-plot.counts(dds_lrt, "HARLEQUIN_1q32.1") # Weird one
+pdf("plots/05m-all_lymphoma_HARLEQUIN_1q32.1.pdf", height=5, width=7)
+plot.counts(dds_lrt, "HARLEQUIN_1q32.1") +  
+  stat_compare_means(comparisons = list(c("ABC", "GCB"),
+                                        c("ABC", "Unclass"),
+                                        c("ABC", "Endemic BL EBV-positive"),
+                                        c("ABC", "Endemic BL EBV-negative"),
+                                        c("ABC", "Sporadic BL EBV-negative")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE) 
+  # Weird one
 dev.off()
 
 pdf("plots/05m-all_lymphoma_LTR46_Xq11.1.pdf", height=4, width=6)
@@ -205,12 +215,107 @@ plot_grid(plot.counts(dds_lrt, "HERVH_15q26.3b"), # Upregulated in BMPC Agirre
 dev.off()
 
 pdf("plots/05m-all_lymphoma_BL_lasso_features.pdf", height=8, width=18)
+plot_grid(plot.counts(dds_lrt, "ERVLE_2p25.3c") +
+            stat_compare_means(comparisons = list(c("ABC", "Endemic BL EBV-positive"))),
+          plot.counts(dds_lrt, "MER61_4p16.3") +
+            stat_compare_means(comparisons = list(c("ABC", "Endemic BL EBV-positive"))), 
+          plot.counts(dds_lrt, "ERV316A3_2q21.2b") +
+            stat_compare_means(comparisons = list(c("ABC", "Endemic BL EBV-positive"))),
+          plot.counts(dds_lrt, "ERVLE_5p13.2c") +
+            stat_compare_means(comparisons = list(c("ABC", "Endemic BL EBV-positive"))),
+          nrow = 2, 
+          ncol = 2) 
+dev.off()
+
+#################### SELECTED FEATURES BROAD LYMPHOMA TYPE ##################### 
+
+# > selected_vars$lasso
+# [1] "ERVL_1p34.2"  "ERVLB4_2p16.3" "MER4B_10q21.3" "ERVL_Xq21.1b"  "ERVLE_14q23.2"
+
+plot.counts <- function(df, gene) {
+  
+  as.data.frame(plotCounts(df, 
+                           gene=gene, 
+                           intgroup="cancer_type", 
+                           returnData = TRUE)) %>%
+    ggplot(aes(x=cancer_type, y=count, fill=cancer_type))  +
+    geom_boxplot(notch = TRUE) +
+    theme_pubr() +
+    theme(legend.position="none",
+          axis.text.x = element_text(angle=45, hjust=1)) +
+    xlab("subtype") +
+    ylab("Counts") +
+    ggtitle(gene) + 
+    theme(plot.title = element_text(hjust = 0.5),
+          aspect.ratio = 1) +
+    scale_fill_manual(values = c("DLBCL" = "0073C2B2", 
+                                 "BL" = "#EFC000B2",
+                                 "FL" = "#868686B2")) + 
+    scale_y_log10(labels = label_comma())   +
+    stat_compare_means(comparisons = list(c("DLBCL", "BL"),
+                                          c("BL", "FL"),
+                                          c("DLBCL", "FL")),
+                       method = "t.test", 
+                       label = "p.signif", 
+                       hide.ns = TRUE) +
+    theme(axis.text=element_text(size=14),
+          axis.title=element_text(size=14),
+          title=element_text(size=14, face="bold")
+}
+
+
+p1 <- plot.counts(dds_lrt, "ERVL_1p34.2")
+p2 <- plot.counts(dds_lrt, "ERVLB4_2p16.3")
+p3 <- plot.counts(dds_lrt, "MER4B_10q21.3")
+p4 <- plot.counts(dds_lrt, "ERVL_Xq21.1b")
+p5 <- plot.counts(dds_lrt, "ERVLE_14q23.2")
+
+pdf("plots/05m-all_broad_lymphoma_selected_features.pdf", height=8, width=12)
+plot_grid(p1, p2, p3, p4, p5,
+          nrow = 2, 
+          ncol = 3,
+          labels = "AUTO")
+dev.off()
+
+pdf("plots/05m-all_broad_lymphoma_HARLEQUIN_1q32.1.pdf", height=4, width=4)
+plot.counts(dds_lrt, "HARLEQUIN_1q32.1") # Weird one
+dev.off()
+
+pdf("plots/05m-all_broad_lymphoma_LTR46_Xq11.1.pdf", height=4, width=4)
+plot.counts(dds_lrt, "LTR46_Xq11.1") # Upregulated in FL
+dev.off()
+
+pdf("plots/05m-all_broad_lymphoma_upreg_DZ.pdf", height=8, width=8)
+plot_grid(plot.counts(dds_lrt, "MER61_3q13.11"),
+          plot.counts(dds_lrt, "HML5_1q22"), 
+          plot.counts(dds_lrt, "HERV3_14q32.33"), 
+          plot.counts(dds_lrt, "HARLEQUIN_19p12b"),
+          nrow = 2, 
+          ncol = 2)
+dev.off()
+
+pdf("plots/05m-all_broad_lymphoma_upreg_PB.pdf", height=8, width=8)
+plot_grid(plot.counts(dds_lrt, "HERVH_15q26.3b"), # Upregulated in BMPC Agirre
+          plot.counts(dds_lrt, "MER61_3q24a"), # Upregulated in PB Agirre
+          plot.counts(dds_lrt, "PABLB_2q31.1"), # Upregulated in PB Agirre
+          plot.counts(dds_lrt, "HERVP71A_15q24.2"),# Upregulated in PB Agirre
+          nrow = 2, 
+          ncol = 2)
+dev.off()
+
+pdf("plots/05m-all_broad_lymphoma_BL_lasso_features.pdf", height=8, width=8)
 plot_grid(plot.counts(dds_lrt, "ERVLE_2p25.3c"),
-          plot.counts(dds_lrt, "MER61_4p16.3"), 
+          plot.counts(dds_lrt, "MER61_4p16.3"),
           plot.counts(dds_lrt, "ERV316A3_2q21.2b"),
           plot.counts(dds_lrt, "ERVLE_5p13.2c"),
           nrow = 2, 
-          ncol = 2)
+          ncol = 2) 
+dev.off()
+
+pdf("plots/05m-all_broad_lymphoma_upreg_FL.pdf", height=4, width=8)
+plot_grid(plot.counts(dds_lrt, "HERVW_6q22.1"),
+          plot.counts(dds_lrt, "HARLEQUIN_4q13.2a")
+          )
 dev.off()
 
 #################################### SAVE DATA #################################
