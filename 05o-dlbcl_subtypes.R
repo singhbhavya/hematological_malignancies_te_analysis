@@ -370,6 +370,7 @@ cplots <- lapply(2:maxK, function(nclu) {
     geom="point",
     palette = "npg"
   ) + theme_cowplot()
+  
   sil <- cluster::silhouette(ccp.obj[[nclu]]$consensusClass, dist(t(cDat), method = "euclidean"))
   p2 <- factoextra::fviz_silhouette(
     cluster::silhouette(ccp.obj[[nclu]]$consensusClass, dist(t(cDat), method = "euclidean")),
@@ -561,6 +562,7 @@ sil.score <- sapply(2:maxK, function(k) {
   mean(cluster::silhouette(ccp.int.ex.obj[[k]]$consensusClass, 
                            dist(t(cDat.int.ex), method = "euclidean"))[,3])
 })
+
 ggplot(data.frame(x=2:maxK, y=sil.score)) + 
   geom_point(aes(x,y)) + 
   geom_line(aes(x,y)) + 
@@ -597,3 +599,5 @@ sink(file = NULL)
 
 save(BL.herv.pca.obj, ccp.obj, tDat, cDat, clust.df, BL_metadata,
      file="r_outputs/05i-BL_pca_ccp_clusters_metadata.Rdata")
+
+load("r_outputs/05i-BL_pca_ccp_clusters_metadata.Rdata")

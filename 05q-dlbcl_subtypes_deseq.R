@@ -578,6 +578,7 @@ pathways.bp <- gmtPathways("gsea/c5.go.bp.v2023.1.Hs.symbols.gmt")
 pathways.kegg <- gmtPathways("gsea/c2.cp.kegg.v2023.1.Hs.symbols.gmt.txt")
 pathways.biocarta <- gmtPathways("gsea/c2.cp.biocarta.v2023.1.Hs.symbols.gmt.txt")
 
+
 ################################ FGSEA FUNCTION ################################
 
 make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
@@ -680,6 +681,71 @@ ggplot(fsgsea.hallmarks.k7.summary, aes(x = index,
   ylab("Hallmark Pathway") 
 dev.off()
 
+################################## BP FGSEA ##################################
+
+fsgsea.BP.k7 <- list(
+  "C1" = make.fsgsea(pathways.bp, res.k7$C1, "C1", "bp"),
+  "C2" = make.fsgsea(pathways.bp, res.k7$C2, "C2", "bp"),
+  "C3" = make.fsgsea(pathways.bp, res.k7$C3, "C3", "bp"),
+  "C4" = make.fsgsea(pathways.bp, res.k7$C4, "C4", "bp"),
+  "C5" = make.fsgsea(pathways.bp, res.k7$C5, "C5", "bp"),
+  "C6" = make.fsgsea(pathways.bp, res.k7$C6, "C6", "bp"),
+  "C7" = make.fsgsea(pathways.bp, res.k7$C7, "C7", "bp")
+)
+
+
+# Get NES 
+fsgsea.BP.k7.summ <- as.data.frame(do.call(cbind, 
+                                           lapply(fsgsea.BP.k7, 
+                                                  function(x) x[, c("NES")])))
+
+# Recode NES summary dataframe
+rownames(fsgsea.BP.k7.summ) <- fsgsea.BP.k7$C1$pathway
+fsgsea.BP.k7.summ <- 
+  fsgsea.BP.k7.summ[rowSums(is.na(fsgsea.BP.k7.summ)) != ncol(fsgsea.BP.k7.summ), ]
+
+
+# Get longform df
+fsgsea.BP.k7.summary <- rbindlist(fsgsea.BP.k7, idcol = "index")
+
+pdf("plots/05q-DLBCL_k7_all_bp_bubble.pdf", height=50, width=7.5)
+ggplot(fsgsea.BP.k7.summary, aes(x = index, 
+                                        y = pathway, 
+                                        size = -log(padj), 
+                                        color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("GO BP Pathway") 
+dev.off()
+
+# top 10 pathways per cluster
+
+top10.bp <- fsgsea.BP.k7.summary %>% 
+  arrange(padj) %>% 
+  group_by(index) %>% dplyr::slice(1:10)
+
+top10.bp.pathways <- unique(top10.bp$pathway)
+top10.bp.pathways <- subset(fsgsea.BP.k7.summary, pathway %in% top10.bp.pathways)
+top10.bp.pathways$pathway <- gsub("GOBP_","",top10.bp.pathways$pathway)
+top10.bp.pathways$pathway <- gsub("_"," ",top10.bp.pathways$pathway)
+
+pdf("plots/05q-DLBCL_k7_all_topbp_bubble.pdf", height=13, width=11)
+ggplot(top10.bp.pathways, aes(x = index, 
+                                 y = pathway, 
+                                 size = -log(padj), 
+                                 color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("GO BP Pathway") 
+dev.off()
 
 ################################# IMMUNE FGSEA #################################
 
@@ -713,25 +779,32 @@ for(clust in names(fsgsea.immune.k7)) {
 }
 dev.off()
 
-fgseaResTidy.immune.summ <- as.data.frame(do.call(cbind, 
-                                                  lapply(fsgsea.immune.k7, 
-                                                         function(x) x[, c("NES")])))
-rownames(fgseaResTidy.immune.summ) <- fsgsea.immune.k7$C1$pathway
+# Get longform df
+fsgsea.immune.k7.summary <- rbindlist(fsgsea.immune.k7, idcol = "index")
 
-fgseaResTidy.immune.summ <- fgseaResTidy.immune.summ[rownames(fgseaResTidy.immune.summ) %like% "GC", ]
+# top 10 pathways per cluster
 
-colnames(fgseaResTidy.immune.summ) <- gsub(".NES","",colnames(fgseaResTidy.immune.summ))
+top10.immune <- fsgsea.immune.k7.summary %>% 
+  arrange(padj) %>% 
+  group_by(index) %>% dplyr::slice(1:10)
 
-pdf("plots/05q-DLBCL_k7_gc_immune_heatmap.pdf", height=10, width=5)
-pheatmap(fgseaResTidy.immune.summ, 
-         cluster_rows=TRUE,
-         show_rownames=TRUE,
-         show_colnames = TRUE,
-         color = viridis_pal()(10),
-         cluster_cols=TRUE, 
-         treeheight_row=0)
+top10.immune.pathways <- unique(top10.immune$pathway)
+top10.immune.pathways <- subset(fsgsea.immune.k7.summary, pathway %in% top10.immune.pathways)
+top10.immune.pathways$pathway <- gsub("_"," ",top10.immune.pathways$pathway)
+
+pdf("plots/05q-DLBCL_k7_all_topimmune_bubble.pdf", height=13, width=13)
+ggplot(top10.immune.pathways, aes(x = index, 
+                              y = pathway, 
+                              size = -log(padj), 
+                              color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("Immune Pathway") 
 dev.off()
-
 ################################## KEGG FGSEA ##################################
 
 fsgsea.kegg.k7 <- list(
@@ -766,29 +839,32 @@ for(clust in names(fsgsea.kegg.k7)) {
   }
 dev.off()
 
+# Get longform df
+fsgsea.kegg.k7.summary <- rbindlist(fsgsea.kegg.k7, idcol = "index")
 
-for(clust in names(fsgsea.kegg.k7)) {
-  
-  fsgsea.kegg.k7[[clust]]$NES[fsgsea.kegg.k7[[clust]]$padj >= 0.05] <- NA 
-}
+# top 10 pathways per cluster
 
-fgseaResTidy.kegg.summ <- as.data.frame(do.call(cbind, 
-                                                  lapply(fsgsea.kegg.k7, 
-                                                         function(x) x[, c("NES")])))
-rownames(fgseaResTidy.kegg.summ) <- fsgsea.kegg.k7$C1$pathway
-rownames(fgseaResTidy.kegg.summ) <- gsub("KEGG_","",rownames(fgseaResTidy.kegg.summ))
-colnames(fgseaResTidy.kegg.summ) <- gsub(".NES","",colnames(fgseaResTidy.kegg.summ))
-fgseaResTidy.kegg.summ <- 
-  fgseaResTidy.kegg.summ[rowSums(is.na(fgseaResTidy.kegg.summ)) != ncol(fgseaResTidy.kegg.summ), ]
+top10.kegg <- fsgsea.kegg.k7.summary %>% 
+  arrange(padj) %>% 
+  group_by(index) %>% dplyr::slice(1:10)
 
-pdf("plots/05q-DLBCL_k7_kegg_heatmap.pdf", height=35, width=7)
-pheatmap(fgseaResTidy.kegg.summ, 
-         cluster_rows=FALSE,
-         show_rownames=TRUE,
-         show_colnames = TRUE,
-         color = viridis_pal()(10),
-         cluster_cols=TRUE, 
-         treeheight_row=0)
+top10.kegg.pathways <- unique(top10.kegg$pathway)
+top10.kegg.pathways <- subset(fsgsea.kegg.k7.summary, pathway %in% top10.kegg.pathways)
+top10.kegg.pathways$pathway <- gsub("_"," ",top10.kegg.pathways$pathway)
+top10.kegg.pathways$pathway <- gsub("KEGG "," ",top10.kegg.pathways$pathway)
+
+pdf("plots/05q-DLBCL_k7_all_topkegg_bubble.pdf", height=10, width=8)
+ggplot(top10.kegg.pathways, aes(x = index, 
+                                  y = pathway, 
+                                  size = -log(padj), 
+                                  color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("KEGG Pathway") 
 dev.off()
 
 ################################ BIOCARTA FGSEA ################################
@@ -849,6 +925,34 @@ pheatmap(data.matrix(fgseaResTidy.biocarta.summ),
          treeheight_row=0)
 dev.off()
 
+
+# Get longform df
+fsgsea.biocarta.k7.summary <- rbindlist(fsgsea.biocarta.k7, idcol = "index")
+
+# top 10 pathways per cluster
+
+top10.biocarta <- fsgsea.biocarta.k7.summary %>% 
+  arrange(padj) %>% 
+  group_by(index) %>% dplyr::slice(1:10)
+
+top10.biocarta.pathways <- unique(top10.biocarta$pathway)
+top10.biocarta.pathways <- subset(fsgsea.biocarta.k7.summary, pathway %in% top10.biocarta.pathways)
+top10.biocarta.pathways$pathway <- gsub("BIOCARTA_","",top10.biocarta.pathways$pathway)
+top10.biocarta.pathways$pathway <- gsub("_"," ",top10.biocarta.pathways$pathway)
+
+pdf("plots/05q-DLBCL_k7_all_topbiocarta_bubble.pdf", height=11, width=6)
+ggplot(top10.biocarta.pathways, aes(x = index, 
+                              y = pathway, 
+                              size = -log(padj), 
+                              color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("DLBCL HERV Cluster") +
+  ylab("BioCarta Pathway") 
+dev.off()
 
 ################################# B CELL FGSEA #################################
 
@@ -941,14 +1045,13 @@ plot.counts <- function(df, gene, title) {
     scale_y_log10(labels = label_comma()) 
 }
 
-plot.counts(DLBCL.k7.dds, "ENSG00000143379.12", "SETDB1") +
-  stat_compare_means(comparisons = list(c("C1", "C5")))#CSF1R
+plot.counts(DLBCL.k7.dds, "ENSG00000143379.12", "SETDB1") 
 
 
-plot.counts(DLBCL.k7.dds, "ENSG00000182578.14", "CSF1R") +
-  stat_compare_means(comparisons = list(c("C1", "C5")))#CSF1R
+
 
 plot.counts(DLBCL.k7.dds, "HARLEQUIN_1q32.1", "HARLEQUIN_1q32.1") 
+plot.counts(DLBCL.k7.dds, "HARLEQUIN_17q25.3b", "HARLEQUIN_17q25.3b") 
 plot.counts(DLBCL.k7.dds, "HML2_1q22", "HML2_1q22")
 plot.counts(DLBCL.k7.dds, "HML5_1q22", "HML5_1q22")
 
@@ -958,4 +1061,64 @@ plot.counts(DLBCL.k7.dds, "ENSG00000204531.20", "POU5F1")
 plot.counts(DLBCL.k7.dds, "ENSG00000101336.18", "HCK")
 plot.counts(DLBCL.k7.dds, "ENSG00000148843.15", "CD11C")
 
+
+plot.counts(DLBCL.k7.dds, "ENSG00000181449.4", "SOX2")
+plot.counts(DLBCL.k7.dds, "ENSG00000136826.15", "KLF4")
+
+plot.counts(DLBCL.k7.dds, "ENSG00000182578.14", "CSF1R") 
+plot.counts(DLBCL.k7.dds, "ENSG00000187621.15", "TCL6")
+plot.counts(DLBCL.k7.dds, "ENSG00000214595.12", "EML6")
+
+################################# FAMILY LEVEL ################################# 
+
+upreg.hervs.df <- do.call(rbind, lapply(upvars.DLBCL.k7.herv, data.frame))
+colnames(upreg.hervs.df) <- c("herv")
+upreg.hervs.df$cancer_type <- rownames(upreg.hervs.df)
+upreg.hervs.df$cancer_type <- gsub("\\..*","",upreg.hervs.df$cancer_type)
+upreg.hervs.df$family <- retro.annot$family[match(upreg.hervs.df$herv, 
+                                                  retro.annot$locus)]
+
+upreg.families <-
+  upreg.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+down.hervs.df <- do.call(rbind, lapply(downvars.DLBCL.k7.herv, data.frame))
+colnames(down.hervs.df) <- c("herv")
+down.hervs.df$cancer_type <- rownames(down.hervs.df)
+down.hervs.df$cancer_type <- gsub("\\..*","",down.hervs.df$cancer_type)
+down.hervs.df$family <- retro.annot$family[match(down.hervs.df$herv, 
+                                                 retro.annot$locus)]
+
+downreg.families <-
+  down.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+updown.family <- do.call(rbind, (list(Upregulated = upreg.families, 
+                                      Dowregulated = downreg.families)))
+updown.family$expression <- rownames(updown.family)
+updown.family$expression <- gsub("\\..*","",updown.family$expression)
+rownames(updown.family)<-NULL
+
+pdf("plots/05q-dlbcl_updown_families_all.pdf", height=8, width=8)
+ggplot(updown.family, aes(fill=reorder(family, -n), y=cancer_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  coord_flip() +
+  theme_cowplot() +  
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab(NULL) +
+  xlab("Number of HERV Loci") + 
+  theme(legend.position = c("right"),
+        plot.margin = margin(10, 10, 10, 40),
+        axis.line=element_blank()) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
 
