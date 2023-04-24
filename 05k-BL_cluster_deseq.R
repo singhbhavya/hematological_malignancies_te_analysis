@@ -115,6 +115,23 @@ upset(fromList(upvars.BL.k2), sets=c("C1", "C2"),
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
 dev.off()
 
+pdf("plots/05k-BL_k2_complexupset_upvars.pdf", height=4, width=5.5)
+ComplexUpset::upset(fromList(upvars.BL.k2), 
+                    intersect = c(names(upvars.BL.k2)),
+                    intersections = list( 
+                      c("C1"), 
+                      c("C2")), 
+                    queries = list(
+                      upset_query(set=c("C1"), 
+                                  color = wes_palette("Chevalier1")[1], 
+                                  fill = wes_palette("Chevalier1")[1]),
+                      upset_query(set=c("C2"), 
+                                  color = wes_palette("Chevalier1")[2], 
+                                  fill = wes_palette("Chevalier1")[2])
+                    ))
+
+dev.off()
+
 up.binmat.BL.k2 <- fromList(upvars.BL.k2)
 rn <- do.call(c, upvars.BL.k2)
 rn <- rn[!duplicated(rn)]
@@ -161,6 +178,23 @@ pdf("plots/05k-BL_k2_upset_hervs_upvars.pdf", height=5, width=7)
 upset(fromList(upvars.BL.k2.hervs), sets=c("C1", "C2"),  
       keep.order = T, order.by='degree', decreasing=F,
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1))
+dev.off()
+
+pdf("plots/05k-BL_k2_complexupset_hervs_upvars.pdf", height=4, width=5.5)
+ComplexUpset::upset(fromList(upvars.BL.k2.hervs), 
+                    intersect = c(names(upvars.BL.k2.hervs)),
+                    intersections = list( 
+                      c("C1"), 
+                      c("C2")), 
+                    queries = list(
+                      upset_query(set=c("C1"), 
+                                  color = wes_palette("Chevalier1")[1], 
+                                  fill = wes_palette("Chevalier1")[1]),
+                      upset_query(set=c("C2"), 
+                                  color = wes_palette("Chevalier1")[2], 
+                                  fill = wes_palette("Chevalier1")[2])
+                    ))
+
 dev.off()
 
 up.binmat.BL.k2.hervs <- fromList(upvars.BL.k2.hervs)
@@ -307,13 +341,62 @@ for(clust in c("C1", "C2")) {
 
 ############################## VOLCANO C1 v C2 #################################
 
-pdf("plots/05k-BL_k2_volcano_C1_v_C2.pdf", height=8, width=8)
+pdf("plots/05k-BL_k2_volcano_C1_v_C2.pdf", height=5, width=5)
 EnhancedVolcano(sig.k2$C1,
                 lab = gene_table[rownames(sig.k2$C1),]$display,
+                selectLab = sig.k2$C1$display[1:50],
                 x = 'log2FoldChange',
                 y = 'pvalue',
-                title = 'C2 v C1')
+                title = 'C2 v C1',
+                labSize = 4)  +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
+
 dev.off()
+
+pdf("plots/05k-BL_k2_volcano_C1_v_C2_herv.pdf", height=5, width=5)
+EnhancedVolcano(sig.k2.herv$C1,
+                lab = gene_table[rownames(sig.k2.herv$C1),]$display,
+                selectLab = sig.k2$C1$display[1:100],
+                x = 'log2FoldChange',
+                y = 'pvalue',
+                title = 'C2 v C1',
+                labSize = 4)  +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
+
+dev.off()
+
+pdf("plots/05k-BL_k2_volcano_EBVpos_v_neg.pdf", height=5, width=5)
+EnhancedVolcano(sig.herv.subtype$`EBV Positive`,
+                lab = gene_table[rownames(sig.herv.subtype$`EBV Positive`),]$display,
+                selectLab = sig.herv.subtype$`EBV Positive`$display[1:100],
+                x = 'log2FoldChange',
+                y = 'pvalue',
+                title = 'EBV- v EBV+',
+                labSize = 4)  +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
+dev.off()
+
+EnhancedVolcano(sig.herv.subtype$`EBV Negative`,
+                lab = gene_table[rownames(sig.herv.subtype$`EBV Negative`),]$display,
+                selectLab = sig.herv.subtype$`EBV Negative`$display[1:100],
+                x = 'log2FoldChange',
+                y = 'pvalue',
+                title = 'EBV negative v All',
+                labSize = 4)  +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text=element_text(size=15),
+        axis.title =element_text(size=15))
+
 
 ########################## PLOT INDIVIDUAL HERVs ###############################
 
@@ -349,6 +432,8 @@ plot.counts(BL.k2.dds, "ERVLB4_3p24.1b")
 pathways.hallmark <- gmtPathways("gsea/h.all.v2023.1.Hs.symbols.gmt")
 pathways.immune <- gmtPathways("gsea/c7.immunesigdb.v2023.1.Hs.symbols.gmt")
 pathways.bp <- gmtPathways("gsea/c5.go.bp.v2023.1.Hs.symbols.gmt")
+pathways.kegg <- gmtPathways("gsea/c2.cp.kegg.v2023.1.Hs.symbols.gmt.txt")
+pathways.biocarta <- gmtPathways("gsea/c2.cp.biocarta.v2023.1.Hs.symbols.gmt.txt")
 
 ################################ FGSEA FUNCTION ################################
 
@@ -455,25 +540,96 @@ ggplot(k2.immune.pathways.subset, aes(reorder(pathway, NES), NES)) +
 
 ################################### BP FGSEA ###################################
 
-k2.bp.fgsea <- fgsea(pathways=pathways.bp, stats=k2.ranks, eps=0, 
-                     nPermSimple = 10000)
+fsgsea.bp.k2 <- list(
+  "C1" = make.fsgsea(pathways.bp, BL.res.k2$C1, "C1", "BP"),
+  "C2" = make.fsgsea(pathways.bp, BL.res.k2$C2, "C2", "BP")
+)
 
-k2.bp.fgseaResTidy <- k2.bp.fgsea %>%
-  as_tibble() %>%
-  arrange(desc(NES))
+# Get NES 
+fsgsea.bp.k2.summ <- as.data.frame(do.call(cbind, 
+                                           lapply(fsgsea.bp.k2, 
+                                                  function(x) x[, c("NES")])))
 
-# Show in a nice table:
-k2.bp.fgseaResTidy %>% 
-  dplyr::select(-leadingEdge, -ES) %>% 
+# Recode NES summary dataframe
+rownames(fsgsea.bp.k2.summ) <- fsgsea.bp.k2$C1$pathway
+fsgsea.bp.k2.summ <- 
+  fsgsea.bp.k2.summ[rowSums(is.na(fsgsea.bp.k2.summ)) != ncol(fsgsea.bp.k2.summ), ]
+
+
+# Get longform df
+fsgsea.bp.k2.summary <- rbindlist(fsgsea.bp.k2, idcol = "index")
+
+# top 10 pathways per cluster
+
+top10.bp <- fsgsea.bp.k2.summary %>% 
   arrange(padj) %>% 
-  DT::datatable()
+  group_by(index) %>% dplyr::slice(1:40)
 
-ggplot(k2.bp.fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.001)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
+top10.bp.pathways <- unique(top10.bp$pathway)
+top10.bp.pathways <- subset(fsgsea.bp.k2.summary, pathway %in% top10.bp.pathways)
+top10.bp.pathways$pathway <- gsub("GOBP_","",top10.bp.pathways$pathway)
+top10.bp.pathways$pathway <- gsub("_"," ",top10.bp.pathways$pathway)
+
+pdf("plots/05q-05k-BL_k2_top_bp_bubble.pdf", height=10, width=9)
+ggplot(top10.bp.pathways, aes(x = index, 
+                              y = pathway, 
+                              size = -log(padj), 
+                              color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("BL HERV Cluster") +
+  ylab("GO BP Pathway") 
+dev.off()
+
+################################### BIOCARTA FGSEA ###################################
+
+fsgsea.biocarta.k2 <- list(
+  "C1" = make.fsgsea(pathways.biocarta, BL.res.k2$C1, "C1", "Biocarta"),
+  "C2" = make.fsgsea(pathways.biocarta, BL.res.k2$C2, "C2", "Biocarts")
+)
+
+# Get NES 
+fsgsea.biocarta.k2.summ <- as.data.frame(do.call(cbind, 
+                                           lapply(fsgsea.biocarta.k2, 
+                                                  function(x) x[, c("NES")])))
+
+# Recode NES summary dataframe
+rownames(fsgsea.biocarta.k2.summ) <- fsgsea.biocarta.k2$C1$pathway
+fsgsea.biocarta.k2.summ <- 
+  fsgsea.biocarta.k2.summ[rowSums(is.na(fsgsea.biocarta.k2.summ)) != ncol(fsgsea.biocarta.k2.summ), ]
+
+
+# Get longform df
+fsgsea.biocarta.k2.summary <- rbindlist(fsgsea.biocarta.k2, idcol = "index")
+
+# top 10 pathways per cluster
+
+top10.biocarta <- fsgsea.biocarta.k2.summary %>% 
+  arrange(padj) %>% 
+  group_by(index) %>% dplyr::slice(1:50)
+
+top10.biocarta.pathways <- unique(top10.biocarta$pathway)
+top10.biocarta.pathways <- subset(fsgsea.biocarta.k2.summary, pathway %in% top10.biocarta.pathways)
+top10.biocarta.pathways$pathway <- gsub("BIOCARTA_","",top10.biocarta.pathways$pathway)
+top10.biocarta.pathways$pathway <- gsub("_"," ",top10.biocarta.pathways$pathway)
+
+pdf("plots/05q-05k-BL_k2_top_biocarts_bubble.pdf", height=6, width=9)
+ggplot(top10.biocarta.pathways, aes(x = index, 
+                              y = pathway, 
+                              size = -log(padj), 
+                              color = NES)) +
+  geom_point() +
+  scale_size(name = "-log (P value)", range = c(1, 10)) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_colour_gradientn(colors = viridis_pal()(10)) +
+  xlab("BL HERV Cluster") +
+  ylab("Biocarta Pathway") 
+dev.off()
+
 
 ################################# B CELL FGSEA #################################
 
@@ -639,6 +795,31 @@ upset(fromList(upvars.BL.subtype), sets=c("Endemic EBV Negative",
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
 dev.off()
 
+pdf("plots/05k-BL_subtype_upvars_complex.pdf", height=5, width=7)
+ComplexUpset::upset(fromList(upvars.BL.subtype[1:4]), 
+                    intersect = c(names(upvars.BL.subtype[1:4])),
+                    intersections = list( 
+                      c("Endemic EBV Negative"), 
+                      c("Endemic EBV Positive"),
+                      c("Sporadic EBV Negative"),
+                      c("Sporadic EBV Positive")), 
+                    queries = list(
+                      upset_query(set=c("Endemic EBV Negative"), 
+                                  color = "#ae5c00", 
+                                  fill = "#ae5c00"),
+                      upset_query(set=c("Endemic EBV Positive"), 
+                                  color = wes_palette("Darjeeling1")[2], 
+                                  fill = wes_palette("Darjeeling1")[2]),
+                      upset_query(set=c("Sporadic EBV Negative"), 
+                                  color = wes_palette("Darjeeling1")[4], 
+                                  fill = wes_palette("Darjeeling1")[4]),
+                      upset_query(set=c("Sporadic EBV Positive"), 
+                                  color = "#006053", 
+                                  fill = "#006053")
+                    ))
+
+dev.off()
+
 upset(fromList(upvars.BL.subtype), sets=c("EBV Positive",
                                           "EBV Negative",
                                           "Endemic", 
@@ -689,6 +870,31 @@ upset(fromList(upvars.BL.herv.subtype), sets=c("Endemic EBV Negative",
                                           "Sporadic EBV Positive"),
       keep.order = T, order.by='degree', decreasing=F,
       text.scale = c(1.5, 1.5, 1, 1, 1.7, 1.7))
+dev.off()
+
+pdf("plots/05k-BL_subtype_herv_upvars_complex.pdf", height=3, width=5)
+ComplexUpset::upset(fromList(upvars.BL.herv.subtype[1:4]), 
+                    intersect = c(names(upvars.BL.herv.subtype[1:4])),
+                    intersections = list( 
+                      c("Endemic EBV Negative"), 
+                      c("Endemic EBV Positive"),
+                      c("Sporadic EBV Negative"),
+                      c("Sporadic EBV Positive")), 
+                    queries = list(
+                      upset_query(set=c("Endemic EBV Negative"), 
+                                  color = "#ae5c00", 
+                                  fill = "#ae5c00"),
+                      upset_query(set=c("Endemic EBV Positive"), 
+                                  color = wes_palette("Darjeeling1")[2], 
+                                  fill = wes_palette("Darjeeling1")[2]),
+                      upset_query(set=c("Sporadic EBV Negative"), 
+                                  color = wes_palette("Darjeeling1")[4], 
+                                  fill = wes_palette("Darjeeling1")[4]),
+                      upset_query(set=c("Sporadic EBV Positive"), 
+                                  color = "#006053", 
+                                  fill = "#006053")
+                    ))
+
 dev.off()
 
 upset(fromList(upvars.BL.herv.subtype), sets=c("EBV Positive",

@@ -119,11 +119,11 @@ length(res.stabsel.c$stable)
 
 selected_vars$lasso <- names(res.stabsel.c$stable)
 
-pdf("plots/05j-BL_features_upset.pdf", height=6, width=8)
-upset(fromList(selected_vars), 
+pdf("plots/05j-BL_features_upset.pdf", height=5, width=7)
+UpSetR::upset(fromList(selected_vars), 
       sets=c('lrt', 'boruta', 'lasso'), 
       order.by = "freq",
-      text.scale = c(1.5, 1.5, 1.3, 1.3, 1.3, 1.3))
+      text.scale = c(2, 2, 2, 2, 2, 2))
 dev.off()
 
 ################################# FEATURE GRAPH ################################
@@ -168,9 +168,15 @@ plot.counts <- function(df, gene) {
     ggtitle(gene) + 
     theme(plot.title = element_text(hjust = 0.5),
           aspect.ratio = 1)  + 
-    scale_y_log10(labels = label_comma()) 
+    scale_y_log10(labels = label_comma())  +
+    stat_compare_means(comparisons = list(c("C1", "C2")),
+                       method = "t.test", 
+                       label = "p.signif", 
+                       hide.ns = TRUE) +
+    theme(axis.text=element_text(size=14),
+          axis.title=element_text(size=14),
+          title=element_text(size=14, face="bold"))
 }
-
 
 p1 <- plot.counts(dds, "ERVLE_2p25.3c")
 p2 <- plot.counts(dds, "MER61_4p16.3")
@@ -182,6 +188,9 @@ plot_grid(p1, p2, p3, p4,
           nrow = 2, 
           ncol = 2)
 dev.off()
+
+plot.counts(dds, "HERVH_14q22.1a")
+
 
 ################################# CLUSTER SIZES ################################
 
