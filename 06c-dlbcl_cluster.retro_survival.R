@@ -141,3 +141,59 @@ coo$plot <- coo$plot +
 coo
 
 dev.off()
+
+ 
+################################### SURVIVAL UNCLASSIFIED ###################################
+
+fit.unclass <- survfit(Surv(time, status) ~ clust.retro.k7, data = metadata[metadata$COO_class == "Unclass" &
+                                                                              metadata$clust.retro.k7 == "C1" | 
+                                                                              metadata$clust.retro.k7 == "C2" |
+                                                                              metadata$clust.retro.k7 == "C4" |
+                                                                              metadata$clust.retro.k7 == "C5" |
+                                                                              metadata$clust.retro.k7 == "C7",])
+print(fit.unclass)
+res.sum.unclass <- surv_summary(fit.unclass, data=metadata[metadata$COO_class == "Unclass" &
+                                                             metadata$clust.retro.k7 == "C1" | 
+                                                             metadata$clust.retro.k7 == "C2" |
+                                                             metadata$clust.retro.k7 == "C4" |
+                                                             metadata$clust.retro.k7 == "C5" |
+                                                             metadata$clust.retro.k7 == "C7",])
+print(res.sum.unclass)
+surv_diff.unclass <- survival::survdiff(Surv(time, status) ~ clust.retro.k7, data = metadata[metadata$COO_class == "Unclass" &
+                                                                                               metadata$clust.retro.k7 == "C1" | 
+                                                                                               metadata$clust.retro.k7 == "C2" |
+                                                                                               metadata$clust.retro.k7 == "C4" |
+                                                                                               metadata$clust.retro.k7 == "C5" |
+                                                                                               metadata$clust.retro.k7 == "C7",])
+print(surv_diff.unclass)
+
+surv_diff.unclass <-
+  ggsurvplot(fit.unclass,
+             risk.table =  "abs_pct",
+             pval = TRUE,
+             break.time.by = 500,
+             conf.int = FALSE,
+             risk.table.col = "strata",
+             risk.table.y.text.col = T,
+             risk.table.y.text = FALSE,
+             linetype = "solid",
+             surv.median.line = "hv",
+             ncensor.plot = FALSE,
+             ggtheme = theme_bw(), # Change ggplot2 theme
+             palette =  c(ggsci::pal_npg(palette = c("nrc"))(7)[1:2],
+                          ggsci::pal_npg(palette = c("nrc"))(7)[4:5],
+                          ggsci::pal_npg(palette = c("nrc"))(7)[7]),
+             legend.labs = 
+               c("C1", "C2", "C4", "C5", "C7"),
+             font.x = c(20),
+             font.y = c(20),
+             font.tickslab = c(20),
+             size = 2,
+             tables.theme = clean_theme()) 
+
+surv_diff.unclass$plot <- surv_diff.unclass$plot + 
+  theme(legend.text = element_text(size = 15, color = "black", face = "bold"))
+
+pdf("plots/06c-dlbcl_cluster.unclass.retro_survival.pdf", height = 9, width=12)
+surv_diff.unclass
+dev.off()
