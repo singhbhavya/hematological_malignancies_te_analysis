@@ -50,8 +50,15 @@ metadata$status <- ifelse(metadata$vital_status == "Alive", 1, 2)
 NCI_DLBCL_clinical_metadata <- 
   GDCquery_clinic("NCICCR-DLBCL", type = "clinical", save.csv = FALSE)
 
-metadata$days_to_death <- NCI_DLBCL_clinical_metadata$days_to_death[
-  match(metadata$case, NCI_DLBCL_clinical_metadata$submitter_id)]
+TCGA_DLBCL_clinical_metadata <- 
+  GDCquery_clinic("TCGA-DLBC", type = "clinical", save.csv = FALSE)
+
+DLBCL_clinical_metadata <- 
+  plyr::rbind.fill(TCGA_DLBCL_clinical_metadata, NCI_DLBCL_clinical_metadata)
+
+metadata$days_to_death <- DLBCL_clinical_metadata$days_to_death[
+  match(metadata$case, DLBCL_clinical_metadata$submitter_id)]
+
 
 metadata$time <- ifelse(!is.na(metadata$days_to_death), 
                         metadata$days_to_death, 
