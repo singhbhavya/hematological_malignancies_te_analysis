@@ -688,6 +688,58 @@ ggplot(b.cell.k2.summary, aes(x = index,
   ylab("B Cell Signature") 
 dev.off()
 
+################################# FAMILY LEVEL ################################# 
+
+upreg.hervs.df <- do.call(rbind, lapply(upvars.BL.k2.hervs, data.frame))
+colnames(upreg.hervs.df) <- c("herv")
+upreg.hervs.df$cancer_type <- rownames(upreg.hervs.df)
+upreg.hervs.df$cancer_type <- gsub("\\..*","",upreg.hervs.df$cancer_type)
+upreg.hervs.df$family <- retro.annot$family[match(upreg.hervs.df$herv, 
+                                                  retro.annot$locus)]
+
+upreg.families <-
+  upreg.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+down.hervs.df <- do.call(rbind, lapply(downvars.BL.k2.hervs, data.frame))
+colnames(down.hervs.df) <- c("herv")
+down.hervs.df$cancer_type <- rownames(down.hervs.df)
+down.hervs.df$cancer_type <- gsub("\\..*","",down.hervs.df$cancer_type)
+down.hervs.df$family <- retro.annot$family[match(down.hervs.df$herv, 
+                                                 retro.annot$locus)]
+
+downreg.families <-
+  down.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+updown.family <- do.call(rbind, (list(Upregulated = upreg.families, 
+                                      Dowregulated = downreg.families)))
+updown.family$expression <- rownames(updown.family)
+updown.family$expression <- gsub("\\..*","",updown.family$expression)
+rownames(updown.family)<-NULL
+
+pdf("plots/05k_BL_updown_families_k2.pdf", height=8, width=6)
+ggplot(updown.family, aes(fill=reorder(family, -n), y=cancer_type, x=n)) + 
+  geom_bar(position="fill", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  coord_flip() +
+  theme_cowplot() +  
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab(NULL) +
+  xlab("Number of HERV Loci") + 
+  theme(legend.position = c("right"),
+        axis.line=element_blank()) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
+
 
 
 ################################################################################
@@ -1001,3 +1053,60 @@ for(clust in c("Endemic EBV Positive",
   dev.off()
 }
 
+################################# FAMILY LEVEL ################################# 
+
+upreg.hervs.df <- do.call(rbind, lapply(upvars.BL.herv.subtype, data.frame))
+# upreg.hervs.df <- do.call(rbind, lapply(upvars.BL.herv.subtype[1:4], data.frame))
+# upreg.hervs.df <- do.call(rbind, lapply(upvars.BL.herv.subtype[5:6], data.frame))
+colnames(upreg.hervs.df) <- c("herv")
+upreg.hervs.df$cancer_type <- rownames(upreg.hervs.df)
+upreg.hervs.df$cancer_type <- gsub("\\..*","",upreg.hervs.df$cancer_type)
+upreg.hervs.df$family <- retro.annot$family[match(upreg.hervs.df$herv, 
+                                                  retro.annot$locus)]
+
+upreg.families <-
+  upreg.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+#down.hervs.df <- do.call(rbind, lapply(downvars.BL.herv.subtype[1:4], data.frame))
+#down.hervs.df <- do.call(rbind, lapply(downvars.BL.herv.subtype[5:6], data.frame))
+down.hervs.df <- do.call(rbind, lapply(downvars.BL.herv.subtype, data.frame))
+colnames(down.hervs.df) <- c("herv")
+down.hervs.df$cancer_type <- rownames(down.hervs.df)
+down.hervs.df$cancer_type <- gsub("\\..*","",down.hervs.df$cancer_type)
+down.hervs.df$family <- retro.annot$family[match(down.hervs.df$herv, 
+                                                 retro.annot$locus)]
+
+downreg.families <-
+  down.hervs.df %>% dplyr::count(family, cancer_type, sort = TRUE) 
+
+updown.family <- do.call(rbind, (list(Upregulated = upreg.families, 
+                                      Dowregulated = downreg.families)))
+updown.family$expression <- rownames(updown.family)
+updown.family$expression <- gsub("\\..*","",updown.family$expression)
+rownames(updown.family)<-NULL
+
+# pdf("plots/05k_BL_updown_families_subtype.pdf", height=8, width=6)
+# pdf("plots/05k_BL_updown_families_ebv.pdf", height=8, width=6)
+pdf("plots/05k_BL_updown_families_all.pdf", height=8, width=8)
+ggplot(updown.family, aes(fill=reorder(family, -n), y=cancer_type, x=n)) + 
+  geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7)),
+                    breaks = unique(retro.annot$family),
+                    labels = unique(retro.annot$family)) + 
+  coord_flip() +
+  theme_cowplot() +  
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab(NULL) +
+  xlab("Number of HERV Loci") + 
+  theme(legend.position = c("right"),
+        axis.line=element_blank()) + 
+  guides(fill = guide_legend(title = "HERV family", ncol = 2)) +
+  facet_wrap(~ expression, ncol = 2)
+dev.off()
