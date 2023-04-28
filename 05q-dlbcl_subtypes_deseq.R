@@ -1069,6 +1069,57 @@ plot.counts(DLBCL.k7.dds, "ENSG00000182578.14", "CSF1R")
 plot.counts(DLBCL.k7.dds, "ENSG00000187621.15", "TCL6")
 plot.counts(DLBCL.k7.dds, "ENSG00000214595.12", "EML6")
 
+pdf("plots/05q-dlbcl_subtypes_fabp7.pdf", height=4,width=4)
+plot.counts(DLBCL.k7.dds, "ENSG00000164434.12", "FABP7") +
+  stat_compare_means(comparisons = list(c("C1", "C2"),
+                                        c("C2", "C3"),
+                                        c("C2", "C4"),
+                                        c("C2", "C5"),
+                                        c("C2", "C7"),
+                                        c("C2", "C6")),
+                     method = "t.test", 
+                     label = "p.signif")
+dev.off()
+
+pdf("plots/05q-dlbcl_subtypes_prdm15.pdf", height=4,width=4)
+plot.counts(DLBCL.k7.dds, "ENSG00000141956.14", "PRDM15") +
+  stat_compare_means(comparisons = list(c("C5", "C1"),
+                                        c("C5", "C2"),
+                                        c("C5", "C3"),
+                                        c("C5", "C6"),
+                                        c("C5", "C7")),
+                     method = "t.test", 
+                     label = "p.signif")
+dev.off()
+
+plot.counts(DLBCL.k7.dds, "ENSG00000057657.17", "PRDM1") +
+  stat_compare_means(comparisons = list(c("C5", "C1"),
+                                        c("C5", "C2"),
+                                        c("C5", "C3"),
+                                        c("C5", "C6"),
+                                        c("C5", "C7")),
+                     method = "t.test", 
+                     label = "p.signif")
+plot.counts(DLBCL.k7.dds, "ENSG00000116731.22", "PRDM2")+
+  stat_compare_means(comparisons = list(c("C1", "C2"),
+                                        c("C2", "C4"),
+                                        c("C4", "C5")),
+                     method = "t.test", 
+                     label = "p.signif")
+
+plot.counts(DLBCL.k7.dds, "ENSG00000152784.16", "PRDM8") +
+  stat_compare_means(comparisons = list(c("C1", "C2"),
+                                        c("C4", "C5"),
+                                        c("C2", "C5"),
+                                        c("C5", "C7")),
+                     method = "t.test", 
+                     label = "p.signif")
+
+
+
+plot.counts(DLBCL.k7.dds, "ENSG00000171791.14", "BCL2")
+plot.counts(DLBCL.k7.dds, "ENSG00000171791.14", "BLIMP1")
+
 ################################# FAMILY LEVEL ################################# 
 
 upreg.hervs.df <- do.call(rbind, lapply(upvars.DLBCL.k7.herv, data.frame))

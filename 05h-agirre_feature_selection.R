@@ -144,7 +144,7 @@ plot.counts <- function(df, gene) {
                            intgroup="Cell", 
                            returnData = TRUE)) %>%
     ggplot(aes(x=Cell, y=count, fill=Cell))  +
-    geom_boxplot() +
+    geom_boxplot(notch = TRUE) +
     theme_pubr() +
     theme(legend.position="none",
           axis.text.x = element_text(angle=45, hjust=1)) +
@@ -163,28 +163,92 @@ plot.counts <- function(df, gene) {
     scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
     ggtitle(gene) + 
     theme(plot.title = element_text(hjust = 0.5),
-          aspect.ratio = 1)
+          aspect.ratio = 1) + 
+    scale_y_log10(labels = label_comma())
 }
 
 
-p1 <- plot.counts(dds_lrt, "ERVLB4_14q23.3")
-p2 <- plot.counts(dds_lrt, "HERVL_2p12a")
-p3 <- plot.counts(dds_lrt, "HERVP71A_8q24.13")
-p4 <- plot.counts(dds_lrt, "MER61_19p12c")
-p5 <- plot.counts(dds_lrt, "HARLEQUIN_19p12b")
-p6 <-  plot.counts(dds_lrt, "HERVFRD_2p12a")
-p7 <-  plot.counts(dds_lrt, "PABLB_7q11.21")
-p8 <-  plot.counts(dds_lrt, "HERVL_1q23.3a")
-p9 <-  plot.counts(dds_lrt, "HERVP71A_15q24.2")
-p10 <-  plot.counts(dds_lrt, "HUERSP2_6p22.3")
-p11 <- plot.counts(dds_lrt, "ERVLE_6p25.1b")
+p1 <- plot.counts(dds_lrt, "ERVLB4_14q23.3") + 
+  stat_compare_means(comparisons = list(c("Memory B", "Plasma cells")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p2 <- plot.counts(dds_lrt, "HERVL_2p12a") +
+  stat_compare_means(comparisons = list(c("Memory B", "Naive B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p3 <- plot.counts(dds_lrt, "HERVP71A_8q24.13") +
+  stat_compare_means(comparisons = list(c("Memory B", "Plasma cells")),
+                   method = "t.test", 
+                   label = "p.signif", 
+                   hide.ns = TRUE)
+p4 <- plot.counts(dds_lrt, "MER61_19p12c") +
+  stat_compare_means(comparisons = list(c("Dark Zone Germinal Center B", 
+                                          "Memory B"),
+                                        c("Dark Zone Germinal Center B",
+                                          "Naive B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p5 <- plot.counts(dds_lrt, "HARLEQUIN_19p12b") +
+  stat_compare_means(comparisons = list(c("Dark Zone Germinal Center B", 
+                                          "Light Zone Germinal Center B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p6 <-  plot.counts(dds_lrt, "HERVFRD_2p12a") +
+  stat_compare_means(comparisons = list(c("Memory B", "Naive B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p7 <-  plot.counts(dds_lrt, "PABLB_7q11.21") +
+  stat_compare_means(comparisons = list(c("Dark Zone Germinal Center B", 
+                                          "Light Zone Germinal Center B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p8 <-  plot.counts(dds_lrt, "HERVL_1q23.3a") +
+  stat_compare_means(comparisons = list(c("Dark Zone Germinal Center B", 
+                                          "Plasma cells")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p9 <-  plot.counts(dds_lrt, "HERVP71A_15q24.2") +
+  stat_compare_means(comparisons = list(c("Light Zone Germinal Center B", 
+                                          "Plasma cells"),
+                                        c("Memory B",
+                                          "Plasma cells"),
+                                        c("Plasma cells",
+                                          "Naive B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p10 <-  plot.counts(dds_lrt, "HUERSP2_6p22.3") +
+  stat_compare_means(comparisons = list(c("Light Zone Germinal Center B", 
+                                          "Naive B"),
+                                        c("Memory B",
+                                          "Naive B"),
+                                        c("Plasma cells",
+                                          "Naive B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
+p11 <- plot.counts(dds_lrt, "ERVLE_6p25.1b") +
+  stat_compare_means(comparisons = list(c("Dark Zone Germinal Center B", 
+                                          "Light Zone Germinal Center B"),
+                                        c("Dark Zone Germinal Center B",
+                                          "Memory B")),
+                     method = "t.test", 
+                     label = "p.signif", 
+                     hide.ns = TRUE)
 
-pdf("plots/05h-agirre_selected_features_lasso.pdf", height=9, width=12)
+pdf("plots/05h-agirre_selected_features_lasso.pdf", height=10, width=12)
 plot_grid(p1, p2, p3, p4, p5, p6, p7,
           p8, p9, p10, p11, 
-          nrow = 4, 
-          ncol = 3,
-          labels = "AUTO")
+          nrow = 3, 
+          ncol = 4,
+          labels = NULL)
 dev.off()
 
 #################################### SAVE DATA #################################
@@ -193,6 +257,7 @@ save(selected_vars, mat.sel, sig_lrt, bor.model, res.stabsel.c,
      file="r_outputs/05h-agirre_selected_features.Rdata")
 
 load("r_outputs/05h-agirre_selected_features.Rdata")
+
 
 
 

@@ -17,6 +17,7 @@ library(GenomicDataCommons)
 library(dplyr)
 library(rtracklayer)
 library(data.table)
+library(edgeR)
 
 ################################## LOAD DATA ###################################
 
@@ -26,6 +27,7 @@ load("r_outputs/01-BL_counts.Rdata")
 load("r_outputs/01-FL_counts.Rdata")
 load("r_outputs/01-GCB_Bulk_counts.Rdata")
 load("r_outputs/01-GCB_Agirre.Rdata")
+load("r_outputs/01-refs.Rdata")
 
 ################################ SANITY CHECK ##################################
 
@@ -230,6 +232,255 @@ cat(sprintf("%d retro genes in GCB Agirre\n", nrow(GCB_Agirre.filt.rtx)))
 cat(sprintf("%d combined genes Agirre\n", nrow(GCB_Agirre.filt.comb)))
 cat(sprintf("%d HERV in GCB Agirre\n", nrow(GCB_Agirre.filt.herv)))
 cat(sprintf("%d L1 in GCB Agirre\n\n", nrow(GCB_Agirre.filt.l1)))
+
+############################# COUNT READS PER TYPE ############################# 
+
+te_percent <- function(herv.df, rtx.df, comb.df, metadata, metadata.col) {
+  
+  herv.reads <- as.data.frame(colSums(herv.df))
+  te.reads <- as.data.frame(colSums(rtx.df))
+  all.reads <- as.data.frame(colSums(comb.df))
+  
+  colnames(herv.reads) <- c("reads")
+  colnames(te.reads) <- c("reads")
+  colnames(all.reads) <- c("reads")
+  
+  herv.reads$sample  <- rownames(herv.reads)
+  te.reads$sample <- rownames(te.reads)
+  all.reads$sample <- rownames(all.reads)
+  
+  herv.reads$type <- metadata[[metadata.col]]
+  te.reads$type <- metadata[[metadata.col]]
+  all.reads$type <- metadata[[metadata.col]]
+  
+  stopifnot(all(all.reads$sample == te.reads$sample))
+  
+  te.reads$proportion <- te.reads$reads/all.reads$reads*100
+  herv.reads$proportion <- herv.reads$reads/all.reads$reads*100
+  
+  output <- list(herv.reads = herv.reads,
+                 te.reads = te.reads)
+  
+  return(output)
+}
+
+####################### COUNT READS PER AGIRRE CELL TYPE ####################### 
+
+agirre.te.percent <-
+  te_percent(GCB_Agirre.filt.herv, GCB_Agirre.filt.rtx, GCB_Agirre.filt.comb,
+           agirre_metadata, "source_name")
+
+agirre.te.percent$herv.reads
+agirre.te.percent$te.reads
+
+pdf("plots/02-agirre_te_percent.pdf", height=4, width=4)
+agirre.te.percent$te.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of TE Fragments") +
+  ylim(0, 1) +
+  scale_fill_manual(values = c("Naive" = pal_jco("default", alpha = 0.8)(7)[1],
+                               "Bone Marrow plasma cell" = pal_jco("default", alpha = 0.8)(7)[7],
+                               "Memory" = pal_jco("default", alpha = 0.8)(7)[3],
+                               "Centroblast" = pal_jco("default", alpha = 0.8)(7)[4],
+                               "Centrocyte" = pal_jco("default", alpha = 0.8)(7)[5],
+                               "Tonsilar plasma cell" = pal_jco("default", alpha = 0.8)(7)[6])) + 
+  scale_x_discrete(labels=c("Naive" = "NB", 
+                            "Memory" = "MB",
+                            "Centroblast" = "DZ",
+                            "Centrocyte" = "LZ",
+                            "Tonsilar plasma cell" = "PB",
+                            "Bone Marrow plasma cell" = "BMPC" )) +
+  theme(aspect.ratio = 1)
+
+dev.off()
+
+pdf("plots/02-agirre_herv_percent.pdf", height=4, width=4)
+agirre.te.percent$herv.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of HERV Fragments") +
+  ylim(0, 1) +
+  scale_fill_manual(values = c("Naive" = pal_jco("default", alpha = 0.8)(7)[1],
+                               "Bone Marrow plasma cell" = pal_jco("default", alpha = 0.8)(7)[7],
+                               "Memory" = pal_jco("default", alpha = 0.8)(7)[3],
+                               "Centroblast" = pal_jco("default", alpha = 0.8)(7)[4],
+                               "Centrocyte" = pal_jco("default", alpha = 0.8)(7)[5],
+                               "Tonsilar plasma cell" = pal_jco("default", alpha = 0.8)(7)[6])) + 
+  scale_x_discrete(labels=c("Naive" = "NB", 
+                            "Memory" = "MB",
+                            "Centroblast" = "DZ",
+                            "Centrocyte" = "LZ",
+                            "Tonsilar plasma cell" = "PB",
+                            "Bone Marrow plasma cell" = "BMPC"))  +
+  theme(aspect.ratio = 1)
+
+dev.off()
+
+####################### COUNT READS PER HOLMES CELL TYPE ####################### 
+
+holmes.te.percent <-
+  te_percent(GCB_Bulk.filt.herv, GCB_Bulk.filt.rtx, GCB_Bulk.filt.comb,
+             bulk_metadata, "source_name")
+
+holmes.te.percent$herv.reads
+holmes.te.percent$te.reads
+
+pdf("plots/02-holmes_te_percent.pdf", height=4, width=4)
+holmes.te.percent$te.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of TE Fragments") +
+  ylim(0, 1) +
+  scale_fill_manual(values = c("Naïve B cells" = pal_jco("default", alpha = 0.7)(5)[1],
+                               "Germinal Center B cells" = pal_jco("default", alpha = 0.7)(5)[2],
+                               "Memory B cells" = pal_jco("default", alpha = 0.7)(5)[3],
+                               "Dark Zone Germinal Center B cells" = pal_jco("default", alpha = 0.7)(5)[4],
+                               "Light Zone Germinal Center B cells" = pal_jco("default", alpha = 0.7)(5)[5])) + 
+  scale_x_discrete(labels=c("Naïve B cells" = "NB", 
+                            "Memory B cells" = "MB",
+                            "Dark Zone Germinal Center B cells" = "DZ",
+                            "Light Zone Germinal Center B cells" = "LZ",
+                            "Germinal Center B cells" = "GCB")) +
+  theme(aspect.ratio = 1)
+
+dev.off()
+
+pdf("plots/02-holmes_herv_percent.pdf", height=4, width=4)
+holmes.te.percent$herv.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of HERV Fragments") +
+  ylim(0, 1) +
+  scale_fill_manual(values = c("Naïve B cells" = pal_jco("default", alpha = 0.7)(5)[1],
+                               "Germinal Center B cells" = pal_jco("default", alpha = 0.7)(5)[2],
+                               "Memory B cells" = pal_jco("default", alpha = 0.7)(5)[3],
+                               "Dark Zone Germinal Center B cells" = pal_jco("default", alpha = 0.7)(5)[4],
+                               "Light Zone Germinal Center B cells" = pal_jco("default", alpha = 0.7)(5)[5])) + 
+  scale_x_discrete(labels=c("Naïve B cells" = "NB", 
+                            "Memory B cells" = "MB",
+                            "Dark Zone Germinal Center B cells" = "DZ",
+                            "Light Zone Germinal Center B cells" = "LZ",
+                            "Germinal Center B cells" = "GCB")) +
+  theme(aspect.ratio = 1)
+
+dev.off()
+
+####################### COUNT READS PER LYMPHOMA SUB-TYPE ###################### 
+
+all_metadata$subtype <- replace_na(all_metadata$subtype, replace = "Unclass")
+lymphoma.te.percent <-
+  te_percent(all.counts.filt.herv, all.counts.filt.rtx, all.counts.filt.comb,
+             all_metadata, "subtype")
+
+lymphoma.te.percent$herv.reads
+lymphoma.te.percent$te.reads
+
+pdf("plots/02-lymphoma_subtype_te_percent.pdf", height=4, width=4)
+lymphoma.te.percent$te.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of TE Fragments") +
+  ylim(0, 1.5) +
+  scale_fill_manual(values = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
+                               "Sporadic BL EBV-positive" = "#006053",
+                               "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
+                               "Endemic BL EBV-negative" = "#ae5c00",
+                               "GCB" = "royalblue", 
+                               "ABC" = "red3", 
+                               "Unclass" = "lightblue", 
+                               "Missing" = "grey",
+                               "FOLLICULAR GRADE 1" = "#F1BB7B",
+                               "FOLLICULAR GRADE 2" = "#FD6467",
+                               "FOLLICULAR GRADE 3A" = "#5B1A18")) + 
+  theme(aspect.ratio = 1)
+dev.off()
+
+pdf("plots/02-lymphoma_subtype_herv_percent.pdf", height=4, width=4)
+lymphoma.te.percent$herv.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of HERV Fragments") +
+  ylim(0, 1.5) +
+  scale_fill_manual(values = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
+                               "Sporadic BL EBV-positive" = "#006053",
+                               "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
+                               "Endemic BL EBV-negative" = "#ae5c00",
+                               "GCB" = "royalblue", 
+                               "ABC" = "red3", 
+                               "Unclass" = "lightblue", 
+                               "Missing" = "grey",
+                               "FOLLICULAR GRADE 1" = "#F1BB7B",
+                               "FOLLICULAR GRADE 2" = "#FD6467",
+                               "FOLLICULAR GRADE 3A" = "#5B1A18")) + 
+  theme(aspect.ratio = 1)
+dev.off()
+
+####################### COUNT READS PER LYMPHOMA SUB-TYPE ###################### 
+
+all_metadata$subtype <- replace_na(all_metadata$subtype, replace = "Unclass")
+lymphoma.te.percent <-
+  te_percent(all.counts.filt.herv, all.counts.filt.rtx, all.counts.filt.comb,
+             all_metadata, "cancer_type")
+
+lymphoma.te.percent$herv.reads
+lymphoma.te.percent$te.reads
+
+pdf("plots/02-lymphoma_type_te_percent.pdf", height=4, width=4)
+lymphoma.te.percent$te.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of TE Fragments") +
+  ylim(0, 1.5) +
+  scale_fill_manual(values = c("DLBCL" = "0073C2B2", 
+                               "BL" = "#EFC000B2",
+                               "FL" = "#868686B2")) + 
+  theme(aspect.ratio = 1)
+dev.off()
+
+pdf("plots/02-lymphoma_type_herv_percent.pdf", height=4, width=4)
+lymphoma.te.percent$herv.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("Cell Type") +
+  ylab("% of HERV Fragments") +
+  ylim(0, 1.5) +
+  scale_fill_manual(values = c("DLBCL" = "0073C2B2", 
+                               "BL" = "#EFC000B2",
+                               "FL" = "#868686B2")) + 
+  theme(aspect.ratio = 1)
+dev.off()
 
 ################################## SAVE FILES ##################################
 
