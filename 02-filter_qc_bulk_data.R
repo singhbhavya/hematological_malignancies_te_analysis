@@ -270,8 +270,13 @@ agirre.te.percent <-
   te_percent(GCB_Agirre.filt.herv, GCB_Agirre.filt.rtx, GCB_Agirre.filt.comb,
            agirre_metadata, "source_name")
 
-agirre.te.percent$herv.reads
-agirre.te.percent$te.reads
+agirre.te.percent$herv.reads %>%
+  group_by(type) %>%
+  summarise_at(vars(proportion), list(name = mean))
+
+agirre.te.percent$te.reads %>%
+  group_by(type) %>%
+  summarise_at(vars(proportion), list(name = mean))
 
 pdf("plots/02-agirre_te_percent.pdf", height=4, width=4)
 agirre.te.percent$te.reads %>%
@@ -331,8 +336,13 @@ holmes.te.percent <-
   te_percent(GCB_Bulk.filt.herv, GCB_Bulk.filt.rtx, GCB_Bulk.filt.comb,
              bulk_metadata, "source_name")
 
-holmes.te.percent$herv.reads
-holmes.te.percent$te.reads
+holmes.te.percent$herv.reads %>%
+  group_by(type) %>%
+  summarise_at(vars(proportion), list(name = mean))
+
+holmes.te.percent$te.reads %>%
+  group_by(type) %>%
+  summarise_at(vars(proportion), list(name = mean))
 
 pdf("plots/02-holmes_te_percent.pdf", height=4, width=4)
 holmes.te.percent$te.reads %>%
@@ -401,7 +411,7 @@ lymphoma.te.percent$te.reads %>%
         axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("Cell Type") +
   ylab("% of TE Fragments") +
-  ylim(0, 1.5) +
+  ylim(0, 2.5) +
   scale_fill_manual(values = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
                                "Sporadic BL EBV-positive" = "#006053",
                                "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
@@ -425,7 +435,7 @@ lymphoma.te.percent$herv.reads %>%
         axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("Cell Type") +
   ylab("% of HERV Fragments") +
-  ylim(0, 1.5) +
+  ylim(0, 2.5) +
   scale_fill_manual(values = c("Endemic BL EBV-positive" = wes_palette("Darjeeling1")[2], 
                                "Sporadic BL EBV-positive" = "#006053",
                                "Sporadic BL EBV-negative" = wes_palette("Darjeeling1")[4],
@@ -459,7 +469,7 @@ lymphoma.te.percent$te.reads %>%
         axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("Cell Type") +
   ylab("% of TE Fragments") +
-  ylim(0, 1.5) +
+  ylim(0, 2.5) +
   scale_fill_manual(values = c("DLBCL" = "0073C2B2", 
                                "BL" = "#EFC000B2",
                                "FL" = "#868686B2")) + 
@@ -475,7 +485,7 @@ lymphoma.te.percent$herv.reads %>%
         axis.text.x = element_text(angle=45, hjust=1)) +
   xlab("Cell Type") +
   ylab("% of HERV Fragments") +
-  ylim(0, 1.5) +
+  ylim(0, 2.5) +
   scale_fill_manual(values = c("DLBCL" = "0073C2B2", 
                                "BL" = "#EFC000B2",
                                "FL" = "#868686B2")) + 
