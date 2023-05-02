@@ -969,6 +969,12 @@ gene.herv.sets.b.cell <- list("DZ" = append(gene.sets.b.cell$DZ, herv.sets.b.cel
                               "MB" = append(gene.sets.b.cell$MB, herv.sets.b.cell$MB)
                               )
  
+write.table(as.data.frame(do.call(cbind, gene.herv.sets.b.cell)), 
+            file = "r_outputs/gene.herv.sets.b.cell.txt",
+            sep = "\t",quote = FALSE,
+            col.names = TRUE,
+            row.names = FALSE)
+
 b.cell.k7 <- list(
   "C1" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C1, "C1", "b.cell"),
   "C2" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C2, "C2", "b.cell"),
@@ -1046,8 +1052,6 @@ plot.counts <- function(df, gene, title) {
 }
 
 plot.counts(DLBCL.k7.dds, "ENSG00000143379.12", "SETDB1") 
-
-
 
 
 plot.counts(DLBCL.k7.dds, "HARLEQUIN_1q32.1", "HARLEQUIN_1q32.1") 

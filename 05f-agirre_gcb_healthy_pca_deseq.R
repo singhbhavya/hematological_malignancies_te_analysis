@@ -1472,7 +1472,24 @@ ggplot(downreg_agirre_naive_te_type, aes(fill=reorder(type, -n), y=cell_type, x=
   theme(aspect.ratio = 1)
 dev.off()
 
+##################################### TABLES ###################################
 
+upvars_agirre_hervs_10 <- upvars_agirre_hervs
+upvars_agirre_hervs_10 <- lapply(upvars_agirre_hervs_10, function(r) {
+  r[1:10]
+})
+
+sig_herv_agirre_10 <- sig_herv_agirre[1:6]
+sig_herv_agirre_10 <- lapply(sig_herv_agirre_10, function(r) {
+  r$locus <- rownames(r)
+  as.data.frame(r[1:10,])
+})
+
+sig_herv_agirre_10_summary <- rbindlist(sig_herv_agirre_10, idcol = "index")
+
+write.csv(sig_herv_agirre_10_summary, 
+          file="r_outputs/sig_herv_agirre_10_summary.csv",
+          quote = FALSE)
 
 ################################### SAVE DATA ##################################
 

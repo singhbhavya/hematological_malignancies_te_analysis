@@ -450,6 +450,49 @@ lymphoma.te.percent$herv.reads %>%
   theme(aspect.ratio = 1)
 dev.off()
 
+####################### COUNT READS PER BURKITT LYMPHOMA ####################### 
+
+BL.te.percent <-
+  te_percent(BL.filt.herv, BL.filt.rtx, BL.filt.comb,
+             BL_metadata, "ebv_status")
+
+BL.te.percent$herv.reads %>%
+  group_by(type) %>%
+  summarise_at(vars(proportion), list(name = mean))
+
+BL.te.percent$te.reads %>%
+  group_by(type) %>%
+  summarise_at(vars(proportion), list(name = mean))
+
+pdf("plots/02-BL_ebv_te_percent.pdf", height=4, width=4)
+BL.te.percent$te.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("EBV status") +
+  ylab("% of TE Fragments") +
+  ylim(0, 3) +
+  scale_fill_manual(values = c("EBV-negative" = wes_palette("Zissou1")[1], 
+                               "EBV-positive" = wes_palette("Zissou1")[4])) + 
+  theme(aspect.ratio = 1)
+dev.off()
+
+pdf("plots/02-BL_ebv_herv_percent.pdf", height=4, width=4)
+BL.te.percent$herv.reads %>%
+  ggplot(aes(x=type, y=proportion, fill=type))  +
+  geom_boxplot(notch = TRUE) +
+  theme_pubr() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  xlab("EBV status") +
+  ylab("% of HERV Fragments") +
+  ylim(0, 3) +
+  scale_fill_manual(values = c("EBV-negative" = wes_palette("Zissou1")[1], 
+                               "EBV-positive" = wes_palette("Zissou1")[4])) + 
+  theme(aspect.ratio = 1)
+dev.off()
 ####################### COUNT READS PER LYMPHOMA SUB-TYPE ###################### 
 
 all_metadata$subtype <- replace_na(all_metadata$subtype, replace = "Unclass")
@@ -491,6 +534,14 @@ lymphoma.te.percent$herv.reads %>%
                                "FL" = "#868686B2")) + 
   theme(aspect.ratio = 1)
 dev.off()
+
+################################## WRITE CSVs ##################################
+
+write.csv(DLBCL.filt.comb, "r_outputs/dlbcl.filt.comb.csv", quote=FALSE)
+write.csv(BL.filt.comb, "r_outputs/BL.filt.comb.csv", quote=FALSE)
+write.csv(FL.filt.comb, "r_outputs/FL.filt.comb.csv", quote=FALSE)
+write.csv(GCB_Bulk.filt.comb, "r_outputs/BHM.filt.comb.csv", quote=FALSE)
+write.csv(GCB_Agirre.filt.comb, "r_outputs/BAG.filt.comb.csv", quote=FALSE)
 
 ################################## SAVE FILES ##################################
 
