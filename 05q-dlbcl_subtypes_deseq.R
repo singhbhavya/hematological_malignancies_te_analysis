@@ -35,14 +35,6 @@ load("r_outputs/02-DLBCL_filt_counts.Rdata")
 load("r_outputs/05o-DLBCL_pca_ccp_clusters_metadata.Rdata")
 load("r_outputs/01-refs.Rdata")
 
-# Add clusters to metadata
-DLBCL_metadata$clust.retro.k2 <- clust.df$clust.retro.k2
-DLBCL_metadata$clust.retro.k3 <- clust.df$clust.retro.k3
-DLBCL_metadata$clust.retro.k4 <- clust.df$clust.retro.k4
-DLBCL_metadata$clust.retro.k5 <- clust.df$clust.retro.k5
-DLBCL_metadata$clust.retro.k7 <- clust.df$clust.retro.k7
-DLBCL_metadata$clust.retro.k9 <- clust.df$clust.retro.k9
-
 ################################################################################
 ################################################################################
 #################################### CLUST 7 ###################################
@@ -105,13 +97,13 @@ DLBCL.k7.herv.tform <- DESeq2::varianceStabilizingTransformation(DLBCL.k7.herv.d
 ############################## TOP GENES AND HERVS ############################# 
 
 res.k7 <- list(
-  "C1" = DESeq2::results(DLBCL.k7.dds, contrast=c(+1, -1/6, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
-  "C2" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, +1, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
-  "C3" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, +1, -1/6, -1/6, -1/6, -1/6), alpha=pval),
-  "C4" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, +1, -1/6, -1/6, -1/6), alpha=pval),
-  "C5" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, +1, -1/6, -1/6), alpha=pval),
-  "C6" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, +1, -1/6), alpha=pval),
-  "C7" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, -1/6, +1), alpha=pval)
+  "HC1" = DESeq2::results(DLBCL.k7.dds, contrast=c(+1, -1/6, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
+  "HC2" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, +1, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
+  "HC3" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, +1, -1/6, -1/6, -1/6, -1/6), alpha=pval),
+  "HC4" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, +1, -1/6, -1/6, -1/6), alpha=pval),
+  "HC5" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, +1, -1/6, -1/6), alpha=pval),
+  "HC6" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, +1, -1/6), alpha=pval),
+  "HC7" = DESeq2::results(DLBCL.k7.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, -1/6, +1), alpha=pval)
 )
 
 res.k7 <- lapply(res.k7, function(r) {
@@ -139,13 +131,13 @@ for (n in names(sig.k7)) {
 ################################ TOP HERVS ONLY ################################ 
 
 res.k7.herv <- list(
-  "C1" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(+1, -1/6, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
-  "C2" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, +1, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
-  "C3" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, +1, -1/6, -1/6, -1/6, -1/6), alpha=pval),
-  "C4" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, +1, -1/6, -1/6, -1/6), alpha=pval),
-  "C5" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, +1, -1/6, -1/6), alpha=pval),
-  "C6" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, +1, -1/6), alpha=pval),
-  "C7" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, -1/6, +1), alpha=pval)
+  "HC1" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(+1, -1/6, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
+  "HC2" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, +1, -1/6, -1/6, -1/6, -1/6, -1/6), alpha=pval),
+  "HC3" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, +1, -1/6, -1/6, -1/6, -1/6), alpha=pval),
+  "HC4" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, +1, -1/6, -1/6, -1/6), alpha=pval),
+  "HC5" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, +1, -1/6, -1/6), alpha=pval),
+  "HC6" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, +1, -1/6), alpha=pval),
+  "HC7" = DESeq2::results(DLBCL.k7.herv.dds, contrast=c(-1/6, -1/6, -1/6, -1/6, -1/6, -1/6, +1), alpha=pval)
 )
 
 res.k7.herv <- lapply(res.k7.herv, function(r) {
@@ -181,33 +173,33 @@ pdf("plots/05q-DLBCL_k7_upset_upvars.pdf", height=5, width=7)
 ComplexUpset::upset(fromList(upvars.DLBCL.k7), 
                     intersect = c(names(upvars.DLBCL.k7)),
                     intersections = list( 
-                      c("C1"), 
-                      c("C2"), 
-                      c("C3"),
-                      c("C4"), 
-                      c("C5"),
-                      c("C6"),
-                      c("C7")), 
+                      c("HC1"), 
+                      c("HC2"), 
+                      c("HC3"),
+                      c("HC4"), 
+                      c("HC5"),
+                      c("HC6"),
+                      c("HC7")), 
                     queries = list(
-                      upset_query(set=c("C1"), 
+                      upset_query(set=c("HC1"), 
                                   color = "#E64B35FF", 
                                   fill = "#E64B35FF"),
-                      upset_query(set=c("C2"), 
+                      upset_query(set=c("HC2"), 
                                   color = "#4DBBD5FF", 
                                   fill = "#4DBBD5FF"),
-                      upset_query(set=c("C3"), 
+                      upset_query(set=c("HC3"), 
                                   color = "#00A087FF", 
                                   fill = "#00A087FF"),
-                      upset_query(set=c("C4"), 
+                      upset_query(set=c("HC4"), 
                                   color = "#3C5488FF", 
                                   fill = "#3C5488FF"),
-                      upset_query(set=c("C5"), 
+                      upset_query(set=c("HC5"), 
                                   color = "#F39B7FFF", 
                                   fill = "#F39B7FFF"),
-                      upset_query(set=c("C6"), 
+                      upset_query(set=c("HC6"), 
                                   color = "#8491B4FF", 
                                   fill = "#8491B4FF"),
-                      upset_query(set=c("C7"), 
+                      upset_query(set=c("HC7"), 
                                   color = "#91D1C2FF", 
                                   fill = "#91D1C2FF")
                     ))
@@ -218,33 +210,33 @@ pdf("plots/05q-DLBCL_k7_upset_downvars.pdf", height=5, width=7)
 ComplexUpset::upset(fromList(downvars.DLBCL.k7), 
                     intersect = c(names(upvars.DLBCL.k7)),
                     intersections = list( 
-                      c("C1"), 
-                      c("C2"), 
-                      c("C3"),
-                      c("C4"), 
-                      c("C5"),
-                      c("C6"),
-                      c("C7")), 
+                      c("HC1"), 
+                      c("HC2"), 
+                      c("HC3"),
+                      c("HC4"), 
+                      c("HC5"),
+                      c("HC6"),
+                      c("HC7")), 
                     queries = list(
-                      upset_query(set=c("C1"), 
+                      upset_query(set=c("HC1"), 
                                   color = "#E64B35FF", 
                                   fill = "#E64B35FF"),
-                      upset_query(set=c("C2"), 
+                      upset_query(set=c("HC2"), 
                                   color = "#4DBBD5FF", 
                                   fill = "#4DBBD5FF"),
-                      upset_query(set=c("C3"), 
+                      upset_query(set=c("HC3"), 
                                   color = "#00A087FF", 
                                   fill = "#00A087FF"),
-                      upset_query(set=c("C4"), 
+                      upset_query(set=c("HC4"), 
                                   color = "#3C5488FF", 
                                   fill = "#3C5488FF"),
-                      upset_query(set=c("C5"), 
+                      upset_query(set=c("HC5"), 
                                   color = "#F39B7FFF", 
                                   fill = "#F39B7FFF"),
-                      upset_query(set=c("C6"), 
+                      upset_query(set=c("HC6"), 
                                   color = "#8491B4FF", 
                                   fill = "#8491B4FF"),
-                      upset_query(set=c("C7"), 
+                      upset_query(set=c("HC7"), 
                                   color = "#91D1C2FF", 
                                   fill = "#91D1C2FF")
                     ))
@@ -289,33 +281,33 @@ pdf("plots/05q-DLBCL_k7_upset_upvars_hervs.pdf", height=5, width=7)
 ComplexUpset::upset(fromList(upvars.DLBCL.k7.herv), 
                     intersect = c(names(upvars.DLBCL.k7.herv)),
                     intersections = list( 
-                      c("C1"), 
-                      c("C2"), 
-                      c("C3"),
-                      c("C4"), 
-                      c("C5"),
-                      c("C6"),
-                      c("C7")), 
+                      c("HC1"), 
+                      c("HC2"), 
+                      c("HC3"),
+                      c("HC4"), 
+                      c("HC5"),
+                      c("HC6"),
+                      c("HC7")), 
                     queries = list(
-                      upset_query(set=c("C1"), 
+                      upset_query(set=c("HC1"), 
                                   color = "#E64B35FF", 
                                   fill = "#E64B35FF"),
-                      upset_query(set=c("C2"), 
+                      upset_query(set=c("HC2"), 
                                   color = "#4DBBD5FF", 
                                   fill = "#4DBBD5FF"),
-                      upset_query(set=c("C3"), 
+                      upset_query(set=c("HC3"), 
                                   color = "#00A087FF", 
                                   fill = "#00A087FF"),
-                      upset_query(set=c("C4"), 
+                      upset_query(set=c("HC4"), 
                                   color = "#3C5488FF", 
                                   fill = "#3C5488FF"),
-                      upset_query(set=c("C5"), 
+                      upset_query(set=c("HC5"), 
                                   color = "#F39B7FFF", 
                                   fill = "#F39B7FFF"),
-                      upset_query(set=c("C6"), 
+                      upset_query(set=c("HC6"), 
                                   color = "#8491B4FF", 
                                   fill = "#8491B4FF"),
-                      upset_query(set=c("C7"), 
+                      upset_query(set=c("HC7"), 
                                   color = "#91D1C2FF", 
                                   fill = "#91D1C2FF")
                     ))
@@ -326,33 +318,33 @@ pdf("plots/05q-DLBCL_k7_upset_downvars_hervs.pdf", height=5, width=7)
 ComplexUpset::upset(fromList(downvars.DLBCL.k7.herv), 
                     intersect = c(names(upvars.DLBCL.k7)),
                     intersections = list( 
-                      c("C1"), 
-                      c("C2"), 
-                      c("C3"),
-                      c("C4"), 
-                      c("C5"),
-                      c("C6"),
-                      c("C7")), 
+                      c("HC1"), 
+                      c("HC2"), 
+                      c("HC3"),
+                      c("HC4"), 
+                      c("HC5"),
+                      c("HC6"),
+                      c("HC7")), 
                     queries = list(
-                      upset_query(set=c("C1"), 
+                      upset_query(set=c("HC1"), 
                                   color = "#E64B35FF", 
                                   fill = "#E64B35FF"),
-                      upset_query(set=c("C2"), 
+                      upset_query(set=c("HC2"), 
                                   color = "#4DBBD5FF", 
                                   fill = "#4DBBD5FF"),
-                      upset_query(set=c("C3"), 
+                      upset_query(set=c("HC3"), 
                                   color = "#00A087FF", 
                                   fill = "#00A087FF"),
-                      upset_query(set=c("C4"), 
+                      upset_query(set=c("HC4"), 
                                   color = "#3C5488FF", 
                                   fill = "#3C5488FF"),
-                      upset_query(set=c("C5"), 
+                      upset_query(set=c("HC5"), 
                                   color = "#F39B7FFF", 
                                   fill = "#F39B7FFF"),
-                      upset_query(set=c("C6"), 
+                      upset_query(set=c("HC6"), 
                                   color = "#8491B4FF", 
                                   fill = "#8491B4FF"),
-                      upset_query(set=c("C7"), 
+                      upset_query(set=c("HC7"), 
                                   color = "#91D1C2FF", 
                                   fill = "#91D1C2FF")
                     ))
@@ -420,13 +412,13 @@ annoCol <- list(COO_class = c("GCB" = "royalblue",
                                      "Other" = "#e9f190",
                                      "ST2" = "#38baaa",
                                      "NA" = "grey"),
-                clust.retro.k7 = c("C1" = "#E64B35FF",
-                                    "C2" = "#4DBBD5FF",
-                                    "C3" = "#00A087FF",
-                                    "C4" = "#3C5488FF",
-                                    "C5" = "#F39B7FFF",
-                                    "C6" = "#8491B4FF",
-                                    "C7" = "#91D1C2FF")
+                clust.retro.k7 = c("HC1" = "#E64B35FF",
+                                    "HC2" = "#4DBBD5FF",
+                                    "HC3" = "#00A087FF",
+                                    "HC4" = "#3C5488FF",
+                                    "HC5" = "#F39B7FFF",
+                                    "HC6" = "#8491B4FF",
+                                    "HC7" = "#91D1C2FF")
 )
 
 ######################### UPREGULATED IN ALL GROUPS ############################
@@ -607,13 +599,13 @@ make.fsgsea <- function(pathway, fgsea.res, clust_name, pathway_name) {
 ################################ HALLMARK FGSEA ################################
 
 fsgsea.hallmarks.k7 <- list(
-  "C1.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C1, "C1", "hallmark"),
-  "C2.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C2, "C2", "hallmark"),
-  "C3.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C3, "C3", "hallmark"),
-  "C4.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C4, "C4", "hallmark"),
-  "C5.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C5, "C5", "hallmark"),
-  "C6.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C6, "C6", "hallmark"),
-  "C7.hallmark" = make.fsgsea(pathways.hallmark, res.k7$C7, "C7", "hallmark")
+  "HC1/ABC-PB.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC1, "HC1/ABC-PB", "hallmark"),
+  "HC2/ABC-MB.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC2, "HC2/ABC-MB", "hallmark"),
+  "HC3/GCB-LZ.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC3, "HC3/GCB-LZ", "hallmark"),
+  "HC4/GCB-Like.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC4, "HC4/GCB-Like", "hallmark"),
+  "HC5/PB-Like.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC5, "HC5/PB-Like", "hallmark"),
+  "HC6/GCB.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC6, "HC6/GCB", "hallmark"),
+  "HC7/HERVH.hallmark" = make.fsgsea(pathways.hallmark, res.k7$HC7, "HC7/HERVH", "hallmark")
 )
 
 pdf("plots/05q-DLBCL_k7_all_c_hallmarks.pdf", height=10, width=7)
@@ -667,6 +659,8 @@ pheatmap(fsgsea.hallmarks.k7.summ,
          treeheight_row=0)
 dev.off()
 
+fsgsea.hallmarks.k7.summary$index[fsgsea.hallmarks.k7.summary$index == "C1"]
+
 pdf("plots/05q-DLBCL_k7_all_hallmarks_bubble.pdf", height=10, width=7.5)
 ggplot(fsgsea.hallmarks.k7.summary, aes(x = index, 
                                         y = pathway, 
@@ -684,15 +678,14 @@ dev.off()
 ################################## BP FGSEA ##################################
 
 fsgsea.BP.k7 <- list(
-  "C1" = make.fsgsea(pathways.bp, res.k7$C1, "C1", "bp"),
-  "C2" = make.fsgsea(pathways.bp, res.k7$C2, "C2", "bp"),
-  "C3" = make.fsgsea(pathways.bp, res.k7$C3, "C3", "bp"),
-  "C4" = make.fsgsea(pathways.bp, res.k7$C4, "C4", "bp"),
-  "C5" = make.fsgsea(pathways.bp, res.k7$C5, "C5", "bp"),
-  "C6" = make.fsgsea(pathways.bp, res.k7$C6, "C6", "bp"),
-  "C7" = make.fsgsea(pathways.bp, res.k7$C7, "C7", "bp")
+  "HC1/ABC-PB" = make.fsgsea(pathways.bp, res.k7$HC1, "HC1/ABC-PB", "bp"),
+  "HC2/ABC-MB" = make.fsgsea(pathways.bp, res.k7$HC2, "HC2/ABC-MB", "bp"),
+  "HC3/GCB-LZ" = make.fsgsea(pathways.bp, res.k7$HC3, "HC3/GCB-LZ", "bp"),
+  "HC4/GCB-Like" = make.fsgsea(pathways.bp, res.k7$HC4, "HC4/GCB-Like", "bp"),
+  "HC5/PB-Like" = make.fsgsea(pathways.bp, res.k7$HC5, "HC5/PB-Like", "bp"),
+  "HC6/GCB" = make.fsgsea(pathways.bp, res.k7$HC6, "HC6/GCB", "bp"),
+  "HC7/HERVH" = make.fsgsea(pathways.bp, res.k7$HC7, "HC7/HERVH", "bp")
 )
-
 
 # Get NES 
 fsgsea.BP.k7.summ <- as.data.frame(do.call(cbind, 
@@ -870,14 +863,15 @@ dev.off()
 ################################ BIOCARTA FGSEA ################################
 
 fsgsea.biocarta.k7 <- list(
-  "C1" = make.fsgsea(pathways.biocarta, res.k7$C1, "C1", "Biocarta"),
-  "C2" = make.fsgsea(pathways.biocarta, res.k7$C2, "C2", "Biocarta"),
-  "C3" = make.fsgsea(pathways.biocarta, res.k7$C3, "C3", "Biocarta"),
-  "C4" = make.fsgsea(pathways.biocarta, res.k7$C4, "C4", "Biocarta"),
-  "C5" = make.fsgsea(pathways.biocarta, res.k7$C5, "C5", "Biocarta"),
-  "C6" = make.fsgsea(pathways.biocarta, res.k7$C6, "C6", "Biocarta"),
-  "C7" = make.fsgsea(pathways.biocarta, res.k7$C7, "C7", "Biocarta")
+  "HC1/ABC-PB" = make.fsgsea(pathways.biocarta, res.k7$HC1, "HC1/ABC-PB", "Biocarta"),
+  "HC2/ABC-MB" = make.fsgsea(pathways.biocarta, res.k7$HC2, "HC2/ABC-MB", "Biocarta"),
+  "HC3/GCB-LZ" = make.fsgsea(pathways.biocarta, res.k7$HC3, "HC3/GCB-LZ", "Biocarta"),
+  "HC4/GCB-Like" = make.fsgsea(pathways.biocarta, res.k7$HC4, "HC4/GCB-Like", "Biocarta"),
+  "HC5/PB-Like" = make.fsgsea(pathways.biocarta, res.k7$HC5, "HC5/PB-Like", "Biocarta"),
+  "HC6/GCB" = make.fsgsea(pathways.biocarta, res.k7$HC6, "HC6/GCB", "Biocarta"),
+  "HC7/HERVH" = make.fsgsea(pathways.biocarta, res.k7$HC7, "HC7/HERVH", "Biocarta")
 )
+
 
 pdf("plots/05q-DLBCL_k7_all_c_biocarta.pdf", height=30, width=7)
 for(clust in names(fsgsea.biocarta.k7)) {
@@ -940,7 +934,7 @@ top10.biocarta.pathways <- subset(fsgsea.biocarta.k7.summary, pathway %in% top10
 top10.biocarta.pathways$pathway <- gsub("BIOCARTA_","",top10.biocarta.pathways$pathway)
 top10.biocarta.pathways$pathway <- gsub("_"," ",top10.biocarta.pathways$pathway)
 
-pdf("plots/05q-DLBCL_k7_all_topbiocarta_bubble.pdf", height=11, width=6)
+pdf("plots/05q-DLBCL_k7_all_topbiocarta_bubble.pdf", height=11, width=6.5)
 ggplot(top10.biocarta.pathways, aes(x = index, 
                               y = pathway, 
                               size = -log(padj), 
@@ -976,13 +970,13 @@ write.table(as.data.frame(do.call(cbind, gene.herv.sets.b.cell)),
             row.names = FALSE)
 
 b.cell.k7 <- list(
-  "C1" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C1, "C1", "b.cell"),
-  "C2" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C2, "C2", "b.cell"),
-  "C3" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C3, "C3", "b.cell"),
-  "C4" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C4, "C4", "b.cell"),
-  "C5" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C5, "C5", "b.cell"),
-  "C6" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C6, "C6", "b.cell"),
-  "C7" = make.fsgsea(gene.herv.sets.b.cell, res.k7$C7, "C7", "b.cell")
+  "HC1/ABC-PB" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC1, "HC1/ABC-PB", "b.cell"),
+  "HC2/ABC-MB" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC2, "HC2/ABC-MB", "b.cell"),
+  "HC3/GCB-LZ" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC3, "HC3/GCB-LZ", "b.cell"),
+  "HC4/GCB-Like" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC4, "HC4/GCB-Like", "b.cell"),
+  "HC5/PB-Like" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC5, "HC5/PB-Like", "b.cell"),
+  "HC6/GCB" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC6, "HC6/GCB", "b.cell"),
+  "HC7/HERVH" = make.fsgsea(gene.herv.sets.b.cell, res.k7$HC7, "HC7/HERVH", "b.cell")
 )
 
 pdf("plots/05q-DLBCL_k7_all_c_bcell.pdf", height=10, width=7)
@@ -1008,7 +1002,7 @@ dev.off()
 fsgsea.b.cell.k7.summary <- rbindlist(b.cell.k7, idcol = "index")
 
 
-pdf("plots/05q-DLBCL_k7_bcell_bubble.pdf", height=5, width=6)
+pdf("plots/05q-DLBCL_k7_bcell_bubble.pdf", height=5.2, width=6)
 ggplot(fsgsea.b.cell.k7.summary, aes(x = index, 
                                         y = pathway, 
                                         size = -log(padj), 
