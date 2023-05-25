@@ -154,45 +154,45 @@ plot.counts <- function(df, gene, title) {
     theme(plot.title = element_text(hjust = 0.5),
           aspect.ratio = 1) +
     ylim(0,10000) +
-    scale_fill_manual(values = c("C1" = "#E64B35FF",
-                                 "C2" = "#4DBBD5FF",
-                                 "C3" = "#00A087FF",
-                                 "C4" = "#3C5488FF",
-                                 "C5" = "#F39B7FFF",
-                                 "C6" = "#8491B4FF",
-                                 "C7" = "#91D1C2FF")) + 
+    scale_fill_manual(values = c("HC1" = "#E64B35FF",
+                                 "HC2" = "#4DBBD5FF",
+                                 "HC3" = "#00A087FF",
+                                 "HC4" = "#3C5488FF",
+                                 "HC5" = "#F39B7FFF",
+                                 "HC6" = "#8491B4FF",
+                                 "HC7" = "#91D1C2FF")) + 
     scale_y_log10(labels = label_comma()) 
 }
 
 
 p1 <- plot.counts(dds_lrt, "HML2_7p22.1", "HML2_7p22.1")+
-  stat_compare_means(comparisons = list(c("C4", "C6"),
-                                        c("C4", "C5"),
-                                        c("C4", "C7")),
+  stat_compare_means(comparisons = list(c("HC4", "HC6"),
+                                        c("HC4", "HC5"),
+                                        c("HC4", "HC7")),
                      method = "t.test", 
                      label = "p.signif")
 
 p2 <- plot.counts(dds_lrt, "HERVH_16p13.2e", "HERVH_16p13.2e") +
-  stat_compare_means(comparisons = list(c("C7", "C6"),
-                                        c("C7", "C5"),
-                                        c("C7", "C4"),
-                                        c("C7", "C3"),
-                                        c("C7", "C2"),
-                                        c("C7", "C1")),
+  stat_compare_means(comparisons = list(c("HC7", "HC6"),
+                                        c("HC7", "HC5"),
+                                        c("HC7", "HC4"),
+                                        c("HC7", "HC3"),
+                                        c("HC7", "HC2"),
+                                        c("HC7", "HC1")),
                      method = "t.test", 
                      label = "p.signif")
 
 p3 <- plot.counts(dds_lrt, "HERVW_2q32.3", "HERVW_2q32.3") +
-  stat_compare_means(comparisons = list(c("C1", "C2"),
-                                        c("C2", "C3"),
-                                        c("C2", "C7")),
+  stat_compare_means(comparisons = list(c("HC1", "HC2"),
+                                        c("HC2", "HC3"),
+                                        c("HC2", "HC7")),
                      method = "t.test", 
                      label = "p.signif")
 
 p4 <- plot.counts(dds_lrt, "HERVH_7q11.23a", "HERVH_7q11.23a") +
-  stat_compare_means(comparisons = list(c("C3", "C5"),
-                                        c("C5", "C7"),
-                                        c("C2", "C5")),
+  stat_compare_means(comparisons = list(c("HC3", "HC5"),
+                                        c("HC5", "HC7"),
+                                        c("HC2", "HC5")),
                      method = "t.test", 
                      label = "p.signif")
 
