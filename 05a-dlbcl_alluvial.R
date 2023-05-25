@@ -224,7 +224,7 @@ ggplot(DLBCL_metadata %>%
   ylab("Number of samples") + 
   guides(fill=guide_legend(title="COO class"))
 
-ggsave("plots/05a-dlbcl_barplot_k7_coo_only.pdf", height=3.5, width=3.5)
+ggsave("plots/05a-dlbcl_barplot_k7_coo_only.pdf", height=5, width=5)
 
 ggplot(DLBCL_metadata %>% 
          dplyr::count(clust.retro.k7,

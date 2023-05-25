@@ -90,7 +90,8 @@ herv_clusters <-
              ggtheme = theme_bw(), # Change ggplot2 theme
              palette =  ggsci::pal_npg(palette = c("nrc"))(7),
              legend.labs = 
-               c("C1", "C2", "C3", "C4", "C5", "C6", "C7"),
+               c("HC1/ABC-PB", "HC2/ABC-MB", "HC3/GCB-LZ", "HC4/GCB-Like", "HC5/PB-Like", 
+                 "HC6/GCB", "HC7/HERVH"),
              font.x = c(20),
              font.y = c(20),
              font.tickslab = c(20),
@@ -146,25 +147,25 @@ dev.off()
 ################################### SURVIVAL UNCLASSIFIED ###################################
 
 fit.unclass <- survfit(Surv(time, status) ~ clust.retro.k7, data = metadata[metadata$COO_class == "Unclass" &
-                                                                              metadata$clust.retro.k7 == "C1" | 
-                                                                              metadata$clust.retro.k7 == "C2" |
-                                                                              metadata$clust.retro.k7 == "C4" |
-                                                                              metadata$clust.retro.k7 == "C5" |
-                                                                              metadata$clust.retro.k7 == "C7",])
+                                                                              metadata$clust.retro.k7 == "HC1" | 
+                                                                              metadata$clust.retro.k7 == "HC2" |
+                                                                              metadata$clust.retro.k7 == "HC4" |
+                                                                              metadata$clust.retro.k7 == "HC5" |
+                                                                              metadata$clust.retro.k7 == "HC7",])
 print(fit.unclass)
 res.sum.unclass <- surv_summary(fit.unclass, data=metadata[metadata$COO_class == "Unclass" &
-                                                             metadata$clust.retro.k7 == "C1" | 
-                                                             metadata$clust.retro.k7 == "C2" |
-                                                             metadata$clust.retro.k7 == "C4" |
-                                                             metadata$clust.retro.k7 == "C5" |
-                                                             metadata$clust.retro.k7 == "C7",])
+                                                             metadata$clust.retro.k7 == "HC1" | 
+                                                             metadata$clust.retro.k7 == "HC2" |
+                                                             metadata$clust.retro.k7 == "HC4" |
+                                                             metadata$clust.retro.k7 == "HC5" |
+                                                             metadata$clust.retro.k7 == "HC7",])
 print(res.sum.unclass)
 surv_diff.unclass <- survival::survdiff(Surv(time, status) ~ clust.retro.k7, data = metadata[metadata$COO_class == "Unclass" &
-                                                                                               metadata$clust.retro.k7 == "C1" | 
-                                                                                               metadata$clust.retro.k7 == "C2" |
-                                                                                               metadata$clust.retro.k7 == "C4" |
-                                                                                               metadata$clust.retro.k7 == "C5" |
-                                                                                               metadata$clust.retro.k7 == "C7",])
+                                                                                               metadata$clust.retro.k7 == "HC1" | 
+                                                                                               metadata$clust.retro.k7 == "HC2" |
+                                                                                               metadata$clust.retro.k7 == "HC4" |
+                                                                                               metadata$clust.retro.k7 == "HC5" |
+                                                                                               metadata$clust.retro.k7 == "HC7",])
 print(surv_diff.unclass)
 
 surv_diff.unclass <-
@@ -184,7 +185,7 @@ surv_diff.unclass <-
                           ggsci::pal_npg(palette = c("nrc"))(7)[4:5],
                           ggsci::pal_npg(palette = c("nrc"))(7)[7]),
              legend.labs = 
-               c("C1", "C2", "C4", "C5", "C7"),
+               c("HC1/ABC-PB", "HC2/ABC-MB", "HC4/GCB-Like", "HC5/PB-Like", "HC7/HERVH"),
              font.x = c(20),
              font.y = c(20),
              font.tickslab = c(20),
