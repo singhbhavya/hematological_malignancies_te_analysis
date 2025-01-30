@@ -1,0 +1,183 @@
+---
+title: "DLBCL mutations - example analysis"
+author: "Matthew Bendall"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+    github_document:
+        toc: true
+        toc_depth: 3
+    html_notebook:
+        df_print: paged
+        highlight: tango
+        number_sections: true
+        theme: paper
+        toc: yes
+        toc_depth: 3
+        code_folding: hide
+        toc_float:
+            collapsed: no
+            smooth_scroll: yes
+---
+
+```{css, echo=FALSE}
+.scroll-150 {
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+# Statistical Testing (example) {.tabset}
+
+## Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+root.dir <- rprojroot::find_rstudio_root_file()
+
+library(tidyverse)
+library(magrittr)
+```
+
+
+## Load and wrangle data
+
+```{r}
+load("r_outputs/05o-DLBCL_pca_ccp_clusters_metadata.Rdata")
+
+dlbcl.tbl <- DLBCL_metadata %>% 
+  rownames_to_column() %>%
+  as_tibble %>%
+  mutate(
+    subtype.herv = factor(clust.retro.k7, levels = str_c('HC', 1:7))
+  )
+
+mut.simple.df <- readRDS('r_outputs/08-DLBCL_mutations/mut.simple.df.Rds')
+fus.df <- readRDS('r_outputs/08-DLBCL_mutations/fus.df.Rds')
+
+# factorize
+mut.simple.df %<>% mutate(across(matches("."), ~ factor(.x, levels=c('.', 'x'))))
+fus.df %<>% mutate(across(matches("."), ~ factor(.x, levels=c('.', 'x'))))
+
+mutfus.tbl <- (
+    dlbcl.tbl %>%
+      select(case, subtype.herv) %>%
+      left_join(
+          mut.simple.df %>% rownames_to_column('case') %>% as_tibble(),
+          by="case"
+      ) %>%
+      left_join(
+          fus.df %>% rownames_to_column('case') %>% as_tibble(),
+          by="case"
+      )
+)
+```
+
+```{r rows.print=20}
+mutfus.tbl
+```
+## Chi square
+
+###### Is there a significant difference in the distribution of a mutation across the HERV subtypes?
+
+(Could wrap this in an lapply)
+
+```{r}
+chisq.myfunc <- function(g) {
+      
+    cat(paste0("## Gene: ", g, "\n"))
+    obs.tbl <- as.matrix(table(mutfus.tbl$subtype.herv, mutfus.tbl[[g]]))
+    
+    cat("\n## Observed")
+    print(obs.tbl)
+    
+    res <- chisq.test(obs.tbl)
+    print(res)
+    
+    inttext <- paste0(
+      "\n## Interpretation:\n",
+      "## There is ", 
+      ifelse(res$p.value<0.05, "", "not "),
+      "a signficant difference in the distribution of ",
+      g,
+      " mutations\n## across HERV subtypes.\n"
+    )
+    
+    cat(inttext)
+    
+    # cat("\n## Observed from test")
+    # res$observed
+    
+    cat("\n## Expected")
+    print(res$expected)
+    
+    cat("\n## Residuals")
+    print(res$residuals)
+    data.frame(res$residuals) %>% 
+      mutate(Var2 = ifelse(Var2=='x', 'VAR', 'WT')) %>% 
+      pivot_wider(names_from = Var2, values_from=Freq) %>%
+      mutate(msg = ifelse(WT<0 & VAR>0, "more mutations", "fewer mutations")) %>%
+      mutate(msg = paste0(Var1, ": ", msg, " than expected")) %>%
+      pull(msg) %>%
+      str_c(collapse='\n##     ') %>% cat('\n##     ', ., '\n', sep = '')
+
+    contrib <- (res$observed - res$expected)^2 / res$expected
+    pct.contrib <- (contrib / res$statistic) * 100
+    
+    cat("\n## Percent contribution")
+    print(pct.contrib)
+    
+    if(res$p.value<0.05) {
+      inttext2 <- paste0("\n## Interpretation:")
+      pc <- data.frame(pct.contrib) %>% arrange(desc(Freq))
+      pc <- {if(max(pc$Freq)>10) pc %>% filter(Freq>10) else pc %>% slice_max(Freq, n=3)}
+      msgs <- sapply(1:nrow(pc), function(i) paste0(
+        'For ', pc$Var1[i], ", ",
+        ifelse(pc$Var2[i]=="x", "a mutation in ", "wildtype "), g, 
+        " contributes ", 
+        sprintf('%.1f', pc$Freq[i]), 
+        "% to the overall signficant test."
+      ))
+      inttext2 <- paste0(inttext2, str_c(str_c('\n##     ', msgs), collapse=""))
+      cat(inttext2)
+    }
+}
+```
+
+```{r}
+chisq.myfunc('MYD88')
+```
+
+```{r}
+chisq.myfunc('fusion.BCL6')
+```
+
+## Logistic regression
+
+### Cluster as predictor (variant ~ cluster)
+
+Cluster as the predictor of variant (i.e. variant is the dependent variable, it depends on the cluster assignment).
+
+```{r}
+xtabs(~subtype.herv + MYD88, data=mutfus.tbl)
+model.logit <- glm(MYD88 ~ subtype.herv, data=mutfus.tbl, family="binomial")
+summary(model.logit)
+```
+
+### Variant as predictor (cluster ~ variant)
+
+Variant as the predictor of cluster (i.e. cluster is the dependent variable, it 
+depends on the variant). Allows testing of multiple variants.
+
+```{r}
+xtabs(~MYD88 + subtype.herv, data=mutfus.tbl)
+model.logit <- glm(subtype.herv ~ MYD88, data=mutfus.tbl, family="binomial")
+summary(model.logit)
+```
+
+```{r}
+model.logit <- glm(subtype.herv ~ MYD88*CD79B, data=mutfus.tbl, family="binomial")
+summary(model.logit)
+```
+

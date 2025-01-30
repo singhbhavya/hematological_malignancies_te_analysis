@@ -3,6 +3,6 @@
 .RData
 literature/
 r_outputs/
-results
+r_outputs
 plots/
 gsea/

@@ -1,0 +1,360 @@
+---
+title: "DLBCL mutations and chromosomal alterations"
+author: "Matthew Bendall"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  github_document:
+    toc: yes
+    toc_depth: 3
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
+  html_notebook:
+    df_print: paged
+    highlight: tango
+    number_sections: yes
+    theme: paper
+    toc: yes
+    toc_depth: 3
+    code_folding: hide
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+params:
+  dedup: yes
+  mut_threshold: 4
+---
+
+```{css, echo=FALSE}
+.scroll-150 {
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+# Mutations and Chromosomal Alterations {.tabset}
+
+## Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+root.dir <- rprojroot::find_rstudio_root_file()
+
+library(tidyverse)
+```
+
+### Load clusters
+
+```{r}
+load("r_outputs/05o-DLBCL_pca_ccp_clusters_metadata.Rdata")
+
+dlbcl.tbl <- DLBCL_metadata %>% 
+  rownames_to_column() %>%
+  as_tibble %>%
+  mutate(
+    subtype.herv = factor(clust.retro.k7, levels = str_c('HC', 1:7))
+  )
+```
+
+##### sanity check
+
+First check that the order of the sample names (`dlbcl.tbl$rowname`) is consistent
+among `dlbcl.tbl`, `clust.df`, `cDat`, and `ccp.obj`.
+
+Then check if the cluster assignments (`dlbcl.tbl$subtype.herv`) are the same
+in `dlbcl.tbl`, `clust.df`, and `ccp.obj`.
+
+```{r}
+# sanity check
+stopifnot(
+    all(dlbcl.tbl$rowname == rownames(clust.df)),
+    all(dlbcl.tbl$rowname == colnames(cDat)),
+    all(dlbcl.tbl$rowname == names(ccp.obj[[7]]$consensusClass))
+)
+
+stopifnot(
+    all(str_c('H', dlbcl.tbl$subtype.herv) == clust.df$clust.retro.k7),
+    all(as.integer(dlbcl.tbl$subtype.herv) == ccp.obj[[7]]$consensusClass)
+)
+```
+
+#### Verify tree is same as in manuscript
+
+```{r}
+dlbcl.tree <- ccp.obj[[7]]$consensusTree
+plot(as.dendrogram(dlbcl.tree))
+```
+
+## MAF data (mutations)
+
+```{r}
+maf.nci.fn <- 'f0325846-10a5-46b9-984d-c93a473bb6a4/MAF_NCICCR-DLBCL_phs001444.txt'
+maf.tcga.fn <- '7156a0a2-4df1-446f-a8cd-31df5b121e74/MAF_TCGA-DLBC_phs000178.txt'
+
+maf.tbl.orig <- rbind(
+  (
+    read.table(
+      file.path('metadata/Schmitz_GDC', maf.nci.fn), header=T, sep='\t'
+    ) %>% mutate(dataset=factor('NCICCR', levels=c('NCICCR','TCGA')))
+  ),
+  (
+    read.table(
+      file.path('metadata/Schmitz_GDC', maf.tcga.fn), header=T, sep='\t'
+    ) %>% mutate(dataset=factor('TCGA', levels=c('NCICCR','TCGA')))
+  )
+) %>% as_tibble() %>%
+  mutate(MUTATION_TYPE=factor(MUTATION_TYPE, levels=c("TRUNC", "INFRAME", "MISSENSE"))) %>%
+  dplyr::relocate(SUBJECT_NAME, MUTATION_ID, GENE.SYMBOL, AA.CHANGE, MUTATION_TYPE, DETECTION_TYPE) %>%
+  select(-c(dbGaP_ACCESSION))
+```
+
+```{r include=FALSE}
+rm(maf.nci.fn, maf.tcga.fn)
+```
+
+### Original MAF table
+
+```{r echo=FALSE, rows.print=20}
+maf.tbl.orig
+```
+
+```{r eval=FALSE, include=FALSE}
+# Subject name, mutation ID, detection type together are sufficent.
+(maf.tbl.orig %>% nrow()) == (maf.tbl.orig %>% select(SUBJECT_NAME, MUTATION_ID, DETECTION_TYPE) %>% distinct() %>% nrow())
+```
+
+#### Dedup
+
+Remove duplicate subject+mutation combinations that differ only by detection
+type. Depends on `params$dedup`.
+
+```{r}
+if(params$dedup) {
+  maf.tbl.dup <- maf.tbl.orig %>% 
+    filter(duplicated(maf.tbl.orig %>% select(SUBJECT_NAME, MUTATION_ID)))
+  maf.tbl <- maf.tbl.orig %>% select(-DETECTION_TYPE) %>% distinct()
+} else {
+  maf.tbl <- maf.tbl.orig
+}
+```
+
+### MAF table
+
+```{r echo=FALSE, rows.print=20}
+maf.tbl
+```
+
+```{r eval=FALSE, include=FALSE}
+dup.i <- 246
+maf.tbl.orig %>%
+  filter(
+    SUBJECT_NAME == maf.tbl.dup[dup.i,]$SUBJECT_NAME & MUTATION_ID == maf.tbl.dup[dup.i,]$MUTATION_ID
+  )
+
+maf.tbl %>%
+  filter(
+    SUBJECT_NAME == maf.tbl.dup[dup.i,]$SUBJECT_NAME & MUTATION_ID == maf.tbl.dup[dup.i,]$MUTATION_ID
+  )
+
+```
+
+#### Number of mutations per sample
+
+```{r rows.print=10}
+count.bysample <- maf.tbl %>% 
+  group_by(SUBJECT_NAME) %>% 
+  summarise(
+    nMUT = n_distinct(MUTATION_ID),
+    uGENE = n_distinct(GENE.SYMBOL)
+  ) %>% 
+  arrange(desc(nMUT))
+
+count.bysample
+```
+
+### Collapse by subject+gene
+
+```{r}
+# Keeps all rows of maf.tbl and adds counts per sample and gene, combines
+# AA.CHANGE and MUTATION_TYPE into a comma-separated list. Mutations for
+# genes with multiple mutations are sorted by mutation type and position.
+annot.maf.tbl <- (
+  maf.tbl %>%
+    # mutate(
+    #   sort.AA.CHANGE = as.integer(str_extract(AA.CHANGE, "[0-9]+"))
+    # ) %>%
+    # mutate(
+    #   sort.AA.CHANGE = ifelse(is.na(sort.AA.CHANGE), 0, sort.AA.CHANGE)
+    # ) %>%
+    group_by(SUBJECT_NAME) %>%
+    mutate(nmut_sample=n()) %>%
+    group_by(SUBJECT_NAME, GENE.SYMBOL) %>%
+    mutate(nmut_gene = n()) %>%
+    arrange(MUTATION_TYPE, HG.19.POSITION, .by_group = TRUE) %>%
+    mutate(
+      AA.CHANGE.slst = str_c(unlist(AA.CHANGE), collapse=','),
+      MUTATION_TYPE.slst = str_c(unlist(MUTATION_TYPE), collapse=',')
+    )
+)
+
+# One row per subject+
+collapse.gene.tbl <- (
+  annot.maf.tbl %>%
+    slice_head(n=1) %>%
+    arrange(desc(nmut_sample), desc(nmut_gene))
+)
+```
+
+```{r eval=FALSE, include=FALSE}
+annot.maf.tbl %>% filter(SUBJECT_NAME=='DLBCL10478' & GENE.SYMBOL=='ARHGEF1')
+```
+
+```{r eval=FALSE, include=FALSE}
+collapse.gene.tbl %>% filter(SUBJECT_NAME=='DLBCL10478' & GENE.SYMBOL=='ARHGEF1')
+```
+
+```{r rows.print=5}
+collapse.gene.tbl %>% 
+  select(SUBJECT_NAME, GENE.SYMBOL, AA.CHANGE, AA.CHANGE.slst, MUTATION_TYPE, MUTATION_TYPE.slst)
+```
+
+```{r eval=FALSE, include=FALSE}
+# check that collapse.gene.tbl agrees with count.bysample
+all(sapply(sample(1:nrow(count.bysample), 15), function(rn) {
+  tmp <- collapse.gene.tbl %>% filter(SUBJECT_NAME == count.bysample$SUBJECT_NAME[rn]) 
+  (nrow(tmp) == count.bysample$uGENE[rn]) & (sum(tmp$nmut_gene) == count.bysample$nMUT[rn])
+}))
+```
+
+### Extract mutations to table
+
+```{r}
+all.genes <- collapse.gene.tbl %>% group_by(GENE.SYMBOL) %>% tally(sort=T)
+all.genes
+```
+
+```{r}
+snames <- setNames(nm=dlbcl.tbl$case)
+gnames <- (all.genes %>% filter(n > params$mut_threshold))$GENE.SYMBOL %>% setNames(nm=.)
+```
+
+
+```{r}
+snames[!(snames %in% collapse.gene.tbl$SUBJECT_NAME)]
+```
+
+```{r}
+mut.detail.df <- {
+  df.lst <- lapply(snames, function(s) {
+    stbl <- collapse.gene.tbl %>% ungroup() %>% filter(SUBJECT_NAME == s)
+    left_join(
+      tibble(GENE.SYMBOL=gnames),
+      stbl %>% select(GENE.SYMBOL, AA.CHANGE, nmut_gene, AA.CHANGE.slst),
+      by=join_by(GENE.SYMBOL)
+    ) %>%
+      mutate(val=AA.CHANGE.slst) %>%
+      pull(val, name=GENE.SYMBOL) %>%
+      {if(nrow(stbl)>0) replace_na(., ".") else .}
+  })
+  df.lst %>% bind_rows() %>% data.frame(row.names=names(df.lst))
+}
+
+mut.detail.df
+```
+
+
+```{r}
+mut.top.df <- {
+  df.lst <- lapply(snames, function(s) {
+    stbl <- collapse.gene.tbl %>% ungroup() %>% filter(SUBJECT_NAME == s)
+    left_join(
+      tibble(GENE.SYMBOL=gnames),
+      stbl %>% select(GENE.SYMBOL, AA.CHANGE, nmut_gene, AA.CHANGE.slst),
+      by=join_by(GENE.SYMBOL)
+    ) %>%
+      mutate(val=AA.CHANGE) %>%
+      pull(val, name=GENE.SYMBOL) %>%
+      {if(nrow(stbl)>0) replace_na(., ".") else .}
+  })
+  df.lst %>% bind_rows() %>% data.frame(row.names=names(df.lst))
+}
+
+mut.top.df
+```
+
+
+```{r}
+mut.simple.df <- {
+  df.lst <- lapply(snames, function(s) {
+    stbl <- collapse.gene.tbl %>% ungroup() %>% filter(SUBJECT_NAME == s)
+    left_join(
+      tibble(GENE.SYMBOL=gnames),
+      stbl %>% select(GENE.SYMBOL, AA.CHANGE, nmut_gene, AA.CHANGE.slst) %>% mutate(val='x'),
+      by=join_by(GENE.SYMBOL)
+    ) %>%
+      pull(val, name=GENE.SYMBOL) %>%
+      {if(nrow(stbl)>0) replace_na(., ".") else .}
+  })
+  df.lst %>% bind_rows() %>% data.frame(row.names=names(df.lst))
+}
+
+mut.simple.df
+```
+
+### Write RDS
+
+```{r}
+saveRDS(mut.detail.df, file = 'r_outputs/08-DLBCL_mutations/mut.detail.df.Rds')
+saveRDS(mut.top.df, file = 'r_outputs/08-DLBCL_mutations/mut.top.df.Rds')
+saveRDS(mut.simple.df, file = 'r_outputs/08-DLBCL_mutations/mut.simple.df.Rds')
+```
+
+## Translocation data
+
+```{r}
+fus.nci.fn <- '3e803605-41bf-45b3-9b55-59c4c2610c60/Fusion_BCL6_BCL2_MYC-NCICCR-DLBCL_phs001444.xlsx'
+fus.tcga.fn <- 'b5deda7e-9971-4426-9bc0-bad025ad6d38/Fusion_BCL6_BCL2_MYC-TCGA-DLBC_phs000178.txt.xlsx'
+
+fus.tbl.orig <- rbind(
+  readxl::read_xlsx(file.path('metadata/Schmitz_GDC', fus.nci.fn)),
+  readxl::read_xlsx(file.path('metadata/Schmitz_GDC', fus.tcga.fn))
+) %>%
+  as_tibble() %>%
+  mutate(
+      fusion.BCL6 = replace_na(`BCL6 locus fusion`, "."),
+      fusion.BCL2 = replace_na(`BCL2  locus fusion`, "."),
+      fusion.MYC = replace_na(`MYC locus fusion`, ".")
+  ) %>%
+  select(SUBJECT_NAME=`dbGAP subject ID`, fusion.BCL6, fusion.BCL2, fusion.MYC)
+```
+
+
+```{r include=FALSE}
+rm(fus.nci.fn, fus.tcga.fn)
+```
+
+### Original MAF table
+
+```{r echo=FALSE, rows.print=20}
+fus.tbl.orig
+```
+### Join
+
+```{r}
+fus.df <- left_join(
+  dlbcl.tbl %>% select(case),
+  fus.tbl.orig,
+  by = join_by(case == SUBJECT_NAME)
+) %>% column_to_rownames("case")
+
+fus.df
+```
+
+### Write RDS
+
+```{r}
+saveRDS(fus.df, file = 'r_outputs/08-DLBCL_mutations/fus.df.Rds')
+```
